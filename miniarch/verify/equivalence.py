@@ -189,6 +189,7 @@ def check_equivalence(
     name_map: NameMap | None = None,
     *,
     mine_inputs: tuple | dict | None = None,
+    mine_input_fn: Callable[[Any], tuple | dict] | None = None,
     out_fn_ref: Callable[[Any], torch.Tensor] = _first_tensor,
     out_fn_mine: Callable[[Any], torch.Tensor] = _first_tensor,
     hook_pairs: list[tuple[str, str]] | None = None,
@@ -218,7 +219,12 @@ def check_equivalence(
         return x
 
     inputs = _to(inputs)
-    mine_inputs = _to(mine_inputs) if mine_inputs is not None else inputs
+    if mine_inputs is not None:
+        mine_inputs = _to(mine_inputs)
+    elif mine_input_fn is not None:  # 입력 이름/순서가 다른 경우 (예: DiT 의 x, t, y)
+        mine_inputs = mine_input_fn(inputs)
+    else:
+        mine_inputs = inputs
 
     def _call(m, x):
         return m(**x) if isinstance(x, dict) else m(*x)

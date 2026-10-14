@@ -113,11 +113,16 @@ def run_case(case: Case, device: str | None = None) -> dict:
         return row
     try:
         mod = importlib.import_module(case.mine_module)
-        pair = mod.verify_pair(ref)  # -> dict(mine=..., name_map=..., 기타 check_equivalence kwargs)
-    except (ImportError, NotImplementedError, AttributeError):
+    except ModuleNotFoundError as e:
+        if e.name != case.mine_module:  # 모듈은 있는데 내부 import 가 깨진 경우
+            raise
+        row["status"] = "⬜ 미구현"
+        return row
+    if not hasattr(mod, "verify_pair"):
         row["status"] = "⬜ 미구현"
         return row
     try:
+        pair = mod.verify_pair(ref)  # -> dict(mine=..., name_map=..., 기타 check_equivalence kwargs)
         mine = pair.pop("mine")
         rep = check_equivalence(ref, mine, inputs, atol=case.atol, device=device, **pair)
         row["status"] = "✅ PASS" if rep.ok else "❌ FAIL"
