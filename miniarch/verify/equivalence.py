@@ -28,6 +28,18 @@ def force_eager(module: nn.Module) -> None:
         cfg._attn_implementation = "eager"
 
 
+@torch.no_grad()
+def perturb_params(module: nn.Module, std: float = 0.05, seed: int = 123) -> None:
+    """모든 파라미터에 잡음 추가.
+
+    bias=0, norm weight=1 같은 초기값은 복사가 빠져도 양쪽이 우연히 같아 검사를 통과해 버린다.
+    잡음을 넣으면 빠진 파라미터가 출력 차이로 드러난다.
+    """
+    g = torch.Generator().manual_seed(seed)
+    for p in module.parameters():
+        p.add_(torch.randn(p.shape, generator=g).to(p.device, p.dtype) * std)
+
+
 # ---------------------------------------------------------------- 가중치 복사
 
 NameMap = Mapping[str, str] | Callable[[str], str | None]

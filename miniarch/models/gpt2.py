@@ -102,7 +102,8 @@ _RENAME = [
 
 
 def hf_name_map(name: str) -> str | None:
-    if name.endswith(("attn.bias", "attn.masked_bias")):  # 구버전 HF 의 causal mask 버퍼
+    # 구버전 HF 의 causal mask 버퍼 (h.N.attn.bias). c_attn.bias 는 진짜 파라미터라 제외하면 안 됨
+    if re.search(r"\.attn\.(bias|masked_bias)$", name):
         return None
     for a, b in _RENAME:
         name = re.sub(a, b, name)

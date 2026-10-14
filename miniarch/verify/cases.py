@@ -14,7 +14,7 @@ from typing import Any, Callable
 
 import torch
 
-from .equivalence import check_equivalence, set_deterministic
+from .equivalence import check_equivalence, perturb_params, set_deterministic
 
 VOCAB, SEQ, BATCH = 128, 16, 2
 
@@ -121,6 +121,7 @@ def run_case(case: Case, device: str | None = None) -> dict:
     if not hasattr(mod, "verify_pair"):
         row["status"] = "⬜ 미구현"
         return row
+    perturb_params(ref)  # 0/1 초기값 때문에 복사 누락이 가려지지 않도록
     try:
         pair = mod.verify_pair(ref)  # -> dict(mine=..., name_map=..., 기타 check_equivalence kwargs)
         mine = pair.pop("mine")
