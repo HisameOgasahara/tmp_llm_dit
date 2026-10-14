@@ -8,7 +8,7 @@
 
 | 노트북 | 내용 | 열기 |
 |---|---|---|
-| `00_verify` | 검증 도구 점검, 원본 구조 읽기, 단계별 검증 현황 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/00_verify.ipynb) |
+| `00_check` | 검증 도구 점검, 원본 구조 읽기, 구현이 원본과 같은지 검증 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/00_check.ipynb) |
 
 ## 실행 방법
 
