@@ -30,3 +30,13 @@ def topk_energy_frac(W: torch.Tensor, p: int, k: int = 5) -> float:
     """상위 k 개 주파수가 차지하는 에너지 비율. grokking 후 1 에 가까워진다."""
     e = freq_energy(W, p)
     return (e.topk(k).values.sum() / e.sum()).item()
+
+
+def fourier_2d(M: torch.Tensor) -> torch.Tensor:
+    """[p, p] 격자 → 2D 푸리에 크기 [p//2+1, p//2+1] (평균 제거, 주파수 0..p//2 만).
+
+    (ka, kb) 칸이 크면 '=' 의 attention 이 a 방향 주파수 ka, b 방향 주파수 kb 로 진동한다는 뜻.
+    """
+    p = M.shape[-1]
+    F = torch.fft.fft2(M.float() - M.float().mean()).abs()
+    return F[: p // 2 + 1, : p // 2 + 1]

@@ -35,14 +35,30 @@ def make_data(p: int = 113, train_frac: float = 0.3, seed: int = 0, device: str 
     return ModAddData(p, x[tr].to(device), y[tr].to(device), x[te].to(device), y[te].to(device))
 
 
-def build_model(kind: str, p: int, d_model: int = 128, n_head: int = 4, n_layer: int = 1) -> nn.Module:
+def build_model(kind: str, p: int, d_model: int = 128, n_head: int = 4, n_layer: int = 1,
+                use_ln: bool = True, tie: bool = True) -> nn.Module:
+    """use_ln/tie 는 GPT-2 ablation 용. use_ln=False, tie=False 가 grokking 원 논문(Nanda et al.) 설정에 가깝다."""
     vocab = p + 1
     if kind == "gpt2":
-        return GPT2(GPT2Config(vocab_size=vocab, n_positions=3, d_model=d_model, n_layer=n_layer, n_head=n_head))
+        return GPT2(GPT2Config(vocab_size=vocab, n_positions=3, d_model=d_model, n_layer=n_layer, n_head=n_head,
+                               use_ln=use_ln, tie_embeddings=tie))
     if kind == "llama":
         return Llama(LlamaConfig(vocab_size=vocab, d_model=d_model, n_layer=n_layer, n_head=n_head,
                                  n_kv_head=n_head, d_ff=4 * d_model))
     raise ValueError(kind)
+
+
+@torch.no_grad()
+def attention_grid(model: nn.Module, p: int, layer: int = 0) -> torch.Tensor:
+    """모든 (a, b) 입력에 대해 '=' 위치가 a 를 보는 attention 확률 → [H, p, p] (행 a, 열 b)."""
+    from ..analysis.attention import capture_attention
+    dev = next(model.parameters()).device
+    a, b = torch.cartesian_prod(torch.arange(p), torch.arange(p)).T
+    x = torch.stack([a, b, torch.full_like(a, p)], dim=1).to(dev)
+    model.eval()
+    att = capture_attention(model, lambda: model(x))
+    P = list(att.values())[layer]                 # [p*p, H, 3, 3]
+    return P[:, :, 2, 0].T.reshape(-1, p, p)      # '=' → a
 
 
 def embedding_weight(model: nn.Module) -> torch.Tensor:

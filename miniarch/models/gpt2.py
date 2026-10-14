@@ -20,6 +20,9 @@ class GPT2Config:
     n_head: int = 4
     ln_eps: float = 1e-5
     dropout: float = 0.0
+    # ablation 용 스위치 (기본값 = 원본 GPT-2)
+    use_ln: bool = True          # False: LayerNorm 을 모두 항등함수로
+    tie_embeddings: bool = True  # False: 출력층을 임베딩과 분리
 
 
 class Attention(nn.Module):
@@ -50,12 +53,16 @@ class MLP(nn.Module):
         return self.drop(self.proj(F.gelu(self.fc(x), approximate="tanh")))
 
 
+def _ln(c: GPT2Config) -> nn.Module:
+    return nn.LayerNorm(c.d_model, eps=c.ln_eps) if c.use_ln else nn.Identity()
+
+
 class Block(nn.Module):
     def __init__(self, c: GPT2Config):
         super().__init__()
-        self.ln1 = nn.LayerNorm(c.d_model, eps=c.ln_eps)
+        self.ln1 = _ln(c)
         self.attn = Attention(c)
-        self.ln2 = nn.LayerNorm(c.d_model, eps=c.ln_eps)
+        self.ln2 = _ln(c)
         self.mlp = MLP(c)
 
     def forward(self, x):
@@ -71,7 +78,8 @@ class GPT2(nn.Module):
         self.pos_emb = nn.Embedding(c.n_positions, c.d_model)
         self.drop = nn.Dropout(c.dropout)
         self.blocks = nn.ModuleList(Block(c) for _ in range(c.n_layer))
-        self.ln_f = nn.LayerNorm(c.d_model, eps=c.ln_eps)
+        self.ln_f = _ln(c)
+        self.lm_head = None if c.tie_embeddings else nn.Linear(c.d_model, c.vocab_size, bias=False)
         self.apply(self._init)
 
     @staticmethod
@@ -88,7 +96,8 @@ class GPT2(nn.Module):
         for b in self.blocks:
             x = b(x)
         h = self.ln_f(x)
-        return LMOutput(h, h @ self.tok_emb.weight.T)  # 출력층은 임베딩과 공유
+        logits = self.lm_head(h) if self.lm_head is not None else h @ self.tok_emb.weight.T
+        return LMOutput(h, logits)
 
 
 # ---------------------------------------------------------------- 검증
