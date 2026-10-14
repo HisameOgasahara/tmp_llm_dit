@@ -1,6 +1,7 @@
 """attention map 캡처와 시각화. 모든 모델의 `*.attn_probs` 지점을 사용한다."""
 from __future__ import annotations
 
+import contextlib
 from typing import Callable
 
 import torch
@@ -19,6 +20,31 @@ def capture_attention(model: nn.Module, call: Callable[[], object]) -> dict[str,
     with capture(model, names) as store, torch.no_grad():
         call()
     return {n: store[n].float().cpu() for n in names}
+
+
+@contextlib.contextmanager
+def patch_attention(model: nn.Module, replace: Callable[[str, torch.Tensor], torch.Tensor]):
+    """attention 확률을 바꿔치기하는 개입(intervention).
+
+    replace(층 이름, 원래 확률 [B, H, Tq, Tk]) → 새 확률. with 블록 안에서만 적용된다.
+    "이 attention 이 정말 계산에 쓰이는가" 를 인과적으로 확인할 때 쓴다.
+    """
+    handles = [m.register_forward_hook(lambda _m, _i, out, n=n: replace(n, out))
+               for n, m in model.named_modules() if n.endswith("attn_probs")]
+    try:
+        yield
+    finally:
+        for h in handles:
+            h.remove()
+
+
+def uniform_probs(P: torch.Tensor, causal: bool = True) -> torch.Tensor:
+    """P 와 같은 shape 의 균등 attention (causal 이면 볼 수 있는 위치에만 균등)."""
+    tq, tk = P.shape[-2:]
+    U = torch.ones(tq, tk, device=P.device, dtype=P.dtype)
+    if causal:
+        U = U.tril(tk - tq)
+    return (U / U.sum(-1, keepdim=True)).expand_as(P)
 
 
 def grid_coords(g: int) -> torch.Tensor:

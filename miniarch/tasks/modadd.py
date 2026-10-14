@@ -61,6 +61,38 @@ def attention_grid(model: nn.Module, p: int, layer: int = 0) -> torch.Tensor:
     return P[:, :, 2, 0].T.reshape(-1, p, p)      # '=' → a
 
 
+@torch.no_grad()
+def qk_norms(model: nn.Module) -> dict[str, float]:
+    """1층 Q, K 투영 가중치 크기. 0 에 가까우면 attention 이 입력과 무관하게 균등해진다."""
+    if hasattr(model, "blocks"):   # GPT-2: q, k, v 가 하나로 합쳐진 qkv
+        q, k, _ = model.blocks[0].attn.qkv.weight.chunk(3, dim=0)
+    else:                          # Llama
+        attn = model.layers[0].self_attn
+        q, k = attn.q_proj.weight, attn.k_proj.weight
+    return {"|W_Q|": q.norm().item(), "|W_K|": k.norm().item()}
+
+
+@torch.no_grad()
+def attention_interventions(model: nn.Module, data: "ModAddData") -> dict[str, float]:
+    """테스트 정확도: 원래 / attention 전부 균등 / head 하나씩 평균 패턴으로 대체(mean ablation)."""
+    from ..analysis.attention import capture_attention, patch_attention, uniform_probs
+    p, x, y = data.p, data.test_x, data.test_y
+    out = {"원래": evaluate(model, x, y, p)[1]}
+    with patch_attention(model, lambda n, P: uniform_probs(P)):
+        out["전부 균등"] = evaluate(model, x, y, p)[1]
+    model.eval()
+    mean = {n: P.mean(0).to(x.device) for n, P in capture_attention(model, lambda: model(x)).items()}
+    H = next(iter(mean.values())).shape[0]
+    for h in range(H):
+        def rep(n, P, h=h):
+            P = P.clone()
+            P[:, h] = mean[n][h]
+            return P
+        with patch_attention(model, rep):
+            out[f"head{h} 평균대체"] = evaluate(model, x, y, p)[1]
+    return out
+
+
 def embedding_weight(model: nn.Module) -> torch.Tensor:
     """숫자 0..p-1 의 임베딩 행렬 (마지막 '=' 토큰 제외)"""
     emb = model.tok_emb if hasattr(model, "tok_emb") else model.embed_tokens
