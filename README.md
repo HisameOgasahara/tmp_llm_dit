@@ -9,6 +9,8 @@
 | 노트북 | 내용 | 열기 |
 |---|---|---|
 | `00_check` | 검증 도구 점검, 원본 구조 읽기, 구현이 원본과 같은지 검증 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/00_check.ipynb) |
+| `01_modadd` | GPT-2 vs Llama: modular addition grokking, 푸리에 해법, attention map, weight decay ablation (~10분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/01_modadd.ipynb) |
+| `02_fashion_dit` | DiT: FashionMNIST 클래스 조건 생성(flow matching + CFG), 층별 attention 거리 (~25분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/02_fashion_dit.ipynb) |
 
 ## 실행 방법
 
@@ -30,7 +32,11 @@ miniarch/
     shapes.py       meta device 모델과 원본 shape 대조
     cases.py        단계별 검증 케이스 레지스트리
   models/      단계별 구현 (각 모듈이 verify_pair 제공)
-notebooks/     Colab 노트북
+  tasks/       학습 태스크 (modadd, fashion)
+  analysis/    해석 도구 (attention 캡처·거리·엔트로피, 푸리에)
+  train.py     공용 학습 유틸 (seed, EMA)
+notebooks/     Colab 노트북 (직접 편집 금지, tools/ 에서 생성)
+tools/         노트북 생성 스크립트
 results/       실험 결과
 CURRICULUM.md  단계별 로드맵
 ```

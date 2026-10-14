@@ -3,3 +3,4 @@ transformers>=5.0
 diffusers
 safetensors
 matplotlib
+koreanize-matplotlib
