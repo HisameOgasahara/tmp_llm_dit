@@ -2,6 +2,4 @@
 transformers>=5.0
 diffusers
 safetensors
-requests
-pandas
 matplotlib

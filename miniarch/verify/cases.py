@@ -40,7 +40,8 @@ def _ids():
 def ref_gpt2():
     from transformers import GPT2Config, GPT2Model
     cfg = GPT2Config(vocab_size=VOCAB, n_positions=64, n_embd=64, n_layer=2, n_head=4,
-                     resid_pdrop=0.0, embd_pdrop=0.0, attn_pdrop=0.0)
+                     resid_pdrop=0.0, embd_pdrop=0.0, attn_pdrop=0.0,
+                     bos_token_id=None, eos_token_id=None)
     return GPT2Model(cfg), _ids()
 
 
