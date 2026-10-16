@@ -49,8 +49,10 @@
 
 ## 진행 순서
 1. Phase 0: 검증 도구 (`00_check`) ✅
-2. A0, A1, B0 구현 ✅ → 첫 실험 `01_modadd`, `02_fashion_dit` ✅
-3. A6a Qwen3.6 하이브리드 (Gated DeltaNet + Gated Attention) ← 현재, 다음: DeepSeek-V4.1-Flash (MLA V4 · mHC · indexer · Engram)
-3. A2 ~ A5
-4. A6 ~ A8
+2. 기준선 A0 GPT-2 · A1 Llama · B0 DiT 구현 ✅ → 첫 실험 `01_modadd`, `02_fashion_dit` ✅
+3. 최신 블록 (진행 중)
+   - A6a Qwen3.6 하이브리드 (Gated DeltaNet + Gated Attention) — 구현, 검증 대기
+   - A4 DeepSeek-V4 (sliding/CSA/HCA + indexer + sink + mHC + MoE) — 구현, 검증 대기
+   - 다음: DeepSeek-V4.1 추가분 (Engram, 층 간 KV/indexer 공유), Kimi-K3 (KDA + gated MLA + AttnRes), GLM-5.3, MiniMax-M3
+4. 최신 블록 비교 실험 (연관 기억 MQAR, 긴 문맥, mHC/MoE ablation)
 5. B1 ~ B4, C0 ~ C1
