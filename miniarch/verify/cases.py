@@ -52,52 +52,6 @@ def ref_llama():
     return LlamaModel(cfg), _ids()
 
 
-def ref_qwen36():
-    """Qwen3.5/3.6 텍스트 모델. 선형 3층 + full 1층, 시퀀스 100 (chunk 64 → chunk 2개 + padding 경로 검사)."""
-    from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
-    from transformers.models.qwen3_5.modeling_qwen3_5 import Qwen3_5TextModel
-    cfg = Qwen3_5TextConfig(
-        vocab_size=VOCAB, hidden_size=64, intermediate_size=128, num_hidden_layers=4,
-        num_attention_heads=4, num_key_value_heads=2, head_dim=16,
-        linear_num_key_heads=2, linear_num_value_heads=4, linear_key_head_dim=16, linear_value_head_dim=16,
-        linear_conv_kernel_dim=4, max_position_embeddings=256, use_cache=False,
-        rope_parameters={"rope_type": "default", "rope_theta": 10000.0, "partial_rotary_factor": 0.25,
-                         "mrope_section": [1, 1, 0]})
-    ids = torch.randint(0, VOCAB, (BATCH, 100), generator=torch.Generator().manual_seed(0))
-    return Qwen3_5TextModel(cfg), {"input_ids": ids}
-
-
-def ref_deepseek_v4():
-    """DeepSeek-V4 축소판. 층 4개 = [sliding, CSA, HCA, CSA], MoE 첫 층은 hash 라우팅. 시퀀스 40.
-
-    window 8, CSA 2토큰→1, HCA 8토큰→1, indexer top-3 → 모든 마스킹 경로(창 밖, 미완성 압축, indexer 미선택)가 쓰인다.
-    """
-    from transformers.models.deepseek_v4.configuration_deepseek_v4 import DeepseekV4Config
-    from transformers.models.deepseek_v4.modeling_deepseek_v4 import DeepseekV4Model
-    cfg = DeepseekV4Config(
-        vocab_size=VOCAB, hidden_size=64, moe_intermediate_size=32, num_hidden_layers=4,
-        num_attention_heads=4, head_dim=32, partial_rotary_factor=0.25, q_lora_rank=32,
-        o_groups=2, o_lora_rank=16, sliding_window=8,
-        layer_types=["sliding_attention", "compressed_sparse_attention",
-                     "heavily_compressed_attention", "compressed_sparse_attention"],
-        compress_rates={"compressed_sparse_attention": 2, "heavily_compressed_attention": 8},
-        mlp_layer_types=["hash_moe", "moe", "moe", "moe"],
-        index_n_heads=2, index_head_dim=16, index_topk=3, hc_mult=4, hc_sinkhorn_iters=20,
-        n_routed_experts=4, num_experts_per_tok=2, max_position_embeddings=256, use_cache=False,
-        pad_token_id=None, bos_token_id=None, eos_token_id=None)
-    m = DeepseekV4Model(cfg)
-    g = torch.Generator().manual_seed(1)
-    with torch.no_grad():  # 라우팅 버퍼를 0 이 아닌 값으로 (0 이면 hash 가 expert 0 만 고르고 bias 효과도 안 보임)
-        for layer in m.layers:
-            gate = layer.mlp.gate
-            if hasattr(gate, "tid2eid"):
-                gate.tid2eid.copy_(torch.randint(0, 4, gate.tid2eid.shape, generator=g))
-            else:
-                gate.e_score_correction_bias.copy_(torch.randn(4, generator=g) * 0.1)
-    ids = torch.randint(0, VOCAB, (BATCH, 40), generator=torch.Generator().manual_seed(0))
-    return m, {"input_ids": ids}
-
-
 def ref_dit():
     from diffusers import DiTTransformer2DModel
     m = DiTTransformer2DModel(num_attention_heads=4, attention_head_dim=16, in_channels=1,
@@ -110,7 +64,8 @@ def ref_dit():
 
 
 # ---------------------------------------------------------------- 레지스트리
-# ref=None 인 케이스는 원본 builder 도 아직 없음 (해당 단계 착수 시 작성)
+# ref=None 인 케이스는 원본 builder 도 아직 없음 (해당 단계 착수 시 작성).
+# A2 이후 단계는 verify/stages/ 의 모듈이 CASE 를 정의하고, 아래 _merge_stages() 가 같은 단계 자리를 덮어쓴다.
 
 CASES: list[Case] = [
     Case("A0", "GPT-2 (MHA, learned pos, LayerNorm, GELU)", "gpt2", "transformers/models/gpt2",
@@ -118,14 +73,9 @@ CASES: list[Case] = [
     Case("A1", "Llama (RoPE, RMSNorm, SwiGLU, GQA)", "Llama", "transformers/models/llama",
          ref_llama, "miniarch.models.llama"),
     Case("A2", "QK-norm / SWA+full / sink / partial RoPE", "MiMo-V2.6", "HF XiaomiMiMo/*/modeling_mimo_v2.py"),
-    Case("A4", "DeepSeek-V4 전체: K=V 단일 head + sliding/CSA/HCA attention + indexer + sink + mHC + sqrt-softplus MoE",
-         "DeepSeek-V4-Flash", "transformers/models/deepseek_v4", ref_deepseek_v4, "miniarch.models.deepseek_v4",
-         atol=1e-4),
     Case("A3", "MoE 단독 비교 (GLM-5.3 DSA+MoE)", "GLM-5.3", "transformers/models/glm_moe_dsa"),
     Case("A5a", "DSA indexer (+층 간 공유)", "GLM-5.3", "transformers/models/glm_moe_dsa"),
     Case("A5b", "블록 top-k sparse (MSA)", "MiniMax-M3", "github MiniMax-AI/MSA tests"),
-    Case("A6a", "Gated DeltaNet + Gated Attention", "Qwen3.6/3.8-27B", "transformers/models/qwen3_5",
-         ref_qwen36, "miniarch.models.qwen36", atol=1e-4),
     Case("A6b", "KDA + gated MLA", "Kimi-K3", "HF moonshotai/Kimi-K3/modeling_kimi_linear.py"),
     Case("A7a", "Hyper-Connections / mHC", "DeepSeek-V4 · Qwen3.8-Flash-Next",
          "transformers/models/deepseek_v4, qwen4_exp"),
@@ -142,6 +92,20 @@ CASES: list[Case] = [
     Case("C1", "MoT world model / VLA", "Cosmos3 (비교: GR00T-N1.7)",
          "diffusers transformer_cosmos3.py · github nvidia/cosmos · NVIDIA/Isaac-GR00T"),
 ]
+
+
+def _merge_stages() -> None:
+    from . import stages
+    for m in stages.modules():
+        i = next((i for i, c in enumerate(CASES) if c.stage == m.STAGE), None)
+        if i is None:
+            CASES.append(m.CASE)
+        else:
+            CASES[i] = m.CASE
+    CASES.sort(key=lambda c: (c.stage[0], int("".join(ch for ch in c.stage if ch.isdigit())), c.stage))
+
+
+_merge_stages()
 
 
 def get(stage: str) -> Case:

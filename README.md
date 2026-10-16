@@ -12,6 +12,16 @@
 | `01_modadd` | GPT-2 vs Llama: modular addition grokking, 푸리에 해법, attention map, weight decay ablation (~10분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/01_modadd.ipynb) |
 | `02_fashion_dit` | DiT: FashionMNIST 클래스 조건 생성(flow matching + CFG), 층별 attention 거리 (~25분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/02_fashion_dit.ipynb) |
 
+### 모델별 검증 (`notebooks/verify/`)
+
+모델마다 노트북이 하나씩 있고, 서로 독립적으로 돌아갑니다. 원본 구조 확인 → 원본 동치 → causal 누수 → 단계 전용 점검 순서입니다.
+전체 단계를 한 표로 보려면 `00_check`의 현황표를 쓰세요.
+
+| 단계 | 모델 | 열기 |
+|---|---|---|
+| A4 | DeepSeek-V4 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A4_deepseek_v4.ipynb) |
+| A6a | Qwen3.6 하이브리드 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A6a_qwen36.ipynb) |
+
 ## 실행 방법
 
 1. 배지를 눌러 Colab에서 엽니다.
@@ -30,12 +40,14 @@ miniarch/
     consistency.py  causal 누수, 증분 디코딩, 두 구현 비교
     hf_header.py    HF safetensors 헤더만 읽어 원본 shape 확인
     shapes.py       meta device 모델과 원본 shape 대조
-    cases.py        단계별 검증 케이스 레지스트리
+    cases.py        단계별 검증 케이스 레지스트리 (전체 현황표)
+    stages/         단계별 검증 케이스 (파일 하나 = 모델 하나 = 검증 노트북 하나)
   models/      단계별 구현 (각 모듈이 verify_pair 제공)
   tasks/       학습 태스크 (modadd, fashion)
   analysis/    해석 도구 (attention 캡처·거리·엔트로피, 푸리에)
   train.py     공용 학습 유틸 (seed, EMA)
 notebooks/     Colab 노트북 (직접 편집 금지, tools/ 에서 생성)
+  verify/      모델별 검증 노트북 (tools/build_verify.py 가 stages/ 에서 생성)
 tools/         노트북 생성 스크립트
 results/       실험 결과
 CURRICULUM.md  단계별 로드맵
