@@ -11,6 +11,7 @@
 | `00_check` | 검증 도구 점검, 원본 구조 읽기, 구현이 원본과 같은지 검증 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/00_check.ipynb) |
 | `01_modadd` | GPT-2 vs Llama: modular addition grokking, 푸리에 해법, attention map, weight decay ablation (~10분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/01_modadd.ipynb) |
 | `02_fashion_dit` | DiT: FashionMNIST 클래스 조건 생성(flow matching + CFG), 층별 attention 거리 (~25분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/02_fashion_dit.ipynb) |
+| `03_train_check` | 학습 코드 검증: 태스크·마스킹·누수·분리, lr·weight decay, 재현·재개, TensorBoard 기록, 검증된 모델 전부 공용 루프로 짧게 학습, MQAR 재현 (~15분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/03_train_check.ipynb) |
 
 ### 모델별 검증 (`notebooks/verify/`)
 
@@ -57,11 +58,14 @@ miniarch/
     hf_header.py    HF safetensors 헤더만 읽어 원본 shape 확인
     shapes.py       meta device 모델과 원본 shape 대조
     cases.py        단계별 검증 케이스 레지스트리 (전체 현황표)
+    training.py     학습 동작 검증 (기울기·학습 궤적 == 원본, 배치 외우기, float64 수치 미분, 라우터 bias)
+    train_tests.py  학습 코드 검증 (태스크·루프·재현·재개·기록)
     stages/         단계별 검증 케이스 (파일 하나 = 모델 하나 = 검증 노트북 하나)
   models/      단계별 구현 (각 모듈이 verify_pair 제공)
   tasks/       학습 태스크 (modadd, fashion)
   analysis/    해석 도구 (attention 캡처·거리·엔트로피, 푸리에)
   train.py     공용 학습 유틸 (seed, EMA)
+  trainer.py   공용 학습 루프 (TensorBoard 기록, MI 지표 자동 수집, 라우터 bias 업데이트, 체크포인트 재개)
 notebooks/     Colab 노트북 (직접 편집 금지, tools/ 에서 생성)
   verify/      모델별 검증 노트북 (tools/build_verify.py 가 stages/ 에서 생성)
 tools/         노트북 생성 스크립트

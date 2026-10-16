@@ -96,11 +96,15 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
    - 18개 모델, 점검 328개 전부 통과. 원본 대비 최종 출력 오차 0 ~ 1e-5
    - LLM: A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA(attention 층 단위), A6a Qwen3.6, A6b Kimi-K3, A6c Qwen3.8 플래그십 2.4T, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash, A9 Step-5-Preview, A10 Gemma 4
    - DiT: B1 Qwen-Image, B2 Krea-2, B3 Anima, B4 MiniMax-H3 / 멀티모달: C0 Qwen3.8-27B 비전, C1 Cosmos3, C2 Qwen-Image-2.1
-   - ⚠️ 여기까지는 forward 만 검증했습니다. 학습 동작 검증이 빠져 있었습니다.
-   - **3-2. 학습 동작 검증** (진행 중): 모든 검증 노트북에 "기울기 == 원본", "학습 궤적 == 원본", "배치 하나 외우기" 추가 → `00_run_all` 재실행
-     (원본이 추론 전용인 A5b·A8·A9 는 원본 비교를 건너뛰고 3-3 의 수치 미분으로 대신)
-   - **3-3. 학습 코드 검증**: 학습 전용 부품 단위 테스트, 수치 미분, 학습 루프·데이터 테스트
-   - **3-4. 공용 학습·측정 코드** (TensorBoard, 태그 통일, run 폴더 = 태스크/모델/스위치/seed): 학습 로그(손실, 기울기 norm, lr, 속도), 태스크 지표, MI 지표(attention 엔트로피·거리, sink 비율, expert 부하, indexer 선택)를 모든 모델에 같게 기록
-   - **다음:** MQAR 태스크 추가 (`miniarch/tasks`) → 4번 실험
+   - ⚠️ 여기까지는 forward 만 검증했습니다. 학습 쪽 검증이 빠져 있었습니다.
+   - **3-2. 모델 학습 동작 검증** (구현 완료, Colab 실행 대기 → `notebooks/verify/00_run_all`): 모델별 노트북에
+     ② 기울기 == 원본, ③ 학습 궤적 == 원본(SGD 30 step), 배치 하나 외우기, ④ float64 수치 미분, 라우터 bias 업데이트
+     (원본이 추론 전용인 A5b·A8·A9 는 ②③ 대신 ④ 수치 미분으로 확인)
+   - **3-3. 학습 코드 검증** (구현 완료, Colab 실행 대기 → `notebooks/03_train_check`): ⑤ 태스크·마스킹·정답 누수·학습/평가 분리,
+     lr 스케줄·weight decay 대상·평가 순수성·seed 재현·체크포인트 재개·TensorBoard 기록, 검증된 LM 전부 + DiT 를 공용 루프로 짧게 학습,
+     ⑥ 알려진 결과 재현(Llama 가 MQAR 풂)
+   - 공용 학습 루프 `miniarch/trainer.py`: 태그 이름 통일, run 폴더 = runs/<태스크>/<모델>/<변형>/seed<k>, MI 지표 자동 수집
+   - 아직 없는 학습 전용 부품: MoE aux loss(Qwen·Gemma 방식), MTP 손실 → 해당 실험에 들어갈 때 추가
+   - **다음:** 위 두 노트북 통과 → 4번 실험 (MQAR 태스크는 `miniarch/tasks/mqar.py` 로 추가됨)
 4. 부품별 ablation 실험: A1 → A2 → DeepSeek-V4 스위치 (sliding만 → +CSA/HCA → +MoE → +mHC), Qwen3.6 선형:full 비율. 태스크 MQAR → 덧셈 → 미로
 5. DiT·멀티모달 실험: 편집, Moving-MNIST, 이미지 질의응답, 미로 행동

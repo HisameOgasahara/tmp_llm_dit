@@ -220,3 +220,126 @@ def train_parity(ref: nn.Module, pair: dict, inputs, device: str, steps: int = 3
                 max_param_rel, worst = rel, rn
     ok = max_loss_rel <= rtol and max_param_rel <= rtol and lr_[-1] < lr_[0]
     return ParityReport(ok, steps, lr_, lm_, max_loss_rel, max_param_rel, worst)
+
+
+# ---------------------------------------------------------------- ④ 원본과 비교할 수 없는 부분
+
+def _double(x):
+    if isinstance(x, torch.Tensor):
+        return x.double() if x.is_floating_point() else x
+    if isinstance(x, dict):
+        return {k: _double(v) for k, v in x.items()}
+    if isinstance(x, (tuple, list)):
+        return type(x)(_double(v) for v in x)
+    return x
+
+
+@dataclass
+class FDReport:
+    ok: bool
+    rel_errors: list[float]
+    eps: float
+    note: str = ""
+
+
+def directional_grad_check(mine: nn.Module, pair: dict, inputs, device: str, n_dirs: int = 3,
+                           eps_list=(1e-3, 1e-4), rtol: float = 1e-2) -> FDReport:
+    """float64 수치 미분: 손실 L = Σ(출력 · 고정 난수) 에 대해, 무작위 방향 d 로
+        (L(θ+εd) − L(θ−εd)) / 2ε   ==   <∇L, d>   (autograd)
+    인지 확인한다. 원본이 추론 전용이라 기울기를 비교할 수 없는 모델(A5b·A8·A9)이나 원본에 없는 부품의 backward 를 대신 검증한다.
+    내부에서 fp32 로 내려 계산하는 연산(norm, softmax 등)이 있어 허용 오차는 1e-2. top-k 선택이 흔들리면 작은 ε 로 다시 본다.
+    """
+    m = copy.deepcopy(mine).to(device).double().train()
+    x = _double(_to(_mine_inputs(pair, _to(inputs, device)), device))
+    out_fn = pair.get("out_fn_mine", _first_tensor)
+    params = [p for p in m.parameters() if p.requires_grad]
+    with torch.no_grad():
+        shape = out_fn(_call(m, x)).shape
+    g = torch.randn(shape, generator=torch.Generator().manual_seed(11), dtype=torch.float64).to(device)
+
+    def L():
+        return (out_fn(_call(m, x)).double() * g).sum()
+
+    grads = torch.autograd.grad(L(), params, allow_unused=True)
+    gen = torch.Generator().manual_seed(13)
+    dirs = []
+    for _ in range(n_dirs):
+        d = [torch.randn(p.shape, generator=gen, dtype=torch.float64).to(device) for p in params]
+        norm = torch.sqrt(sum((v * v).sum() for v in d))
+        dirs.append([v / norm for v in d])
+    best = None
+    for eps in eps_list:
+        rels = []
+        for d in dirs:
+            analytic = sum(((gr * v).sum() for gr, v in zip(grads, d) if gr is not None), torch.zeros((), dtype=torch.float64, device=device)).item()
+            with torch.no_grad():
+                for p, v in zip(params, d):
+                    p.add_(eps * v)
+                lp = L().item()
+                for p, v in zip(params, d):
+                    p.sub_(2 * eps * v)
+                lm = L().item()
+                for p, v in zip(params, d):
+                    p.add_(eps * v)
+            numeric = (lp - lm) / (2 * eps)
+            rels.append(abs(analytic - numeric) / max(abs(analytic), abs(numeric), 1e-8))
+        rep = FDReport(max(rels) <= rtol, rels, eps)
+        if rep.ok:
+            return rep
+        best = rep if best is None or max(rep.rel_errors) < max(best.rel_errors) else best
+    return best
+
+
+@dataclass
+class BiasReport:
+    ok: bool
+    n_routers: int
+    details: list[str]
+
+
+def router_bias_check(mine: nn.Module, pair: dict, inputs, device: str, rate: float = 1e-2) -> BiasReport:
+    """aux-loss-free 라우터 bias 업데이트 (miniarch.trainer.RouterBalancer) 점검. 라우터가 없으면 n_routers=0.
+    - bias 는 optimizer 에서 빠진다 (기울기·weight decay 대상이 아니라 규칙으로만 움직임)
+    - 업데이트 방향: 많이 뽑힌 expert 의 bias 는 내려가고 적게 뽑힌 쪽은 올라간다
+    - bias 를 바꾸면 선택이 실제로 바뀐다 (bias 가 선택에 쓰인다)
+    """
+    from ..trainer import RouterBalancer, param_groups
+    m = copy.deepcopy(mine).to(device).float().train()
+    bal = RouterBalancer(m)
+    if not bal.routers:
+        return BiasReport(True, 0, ["라우터 bias 없음 (softmax 라우터·aux loss 방식이거나 MoE 없음)"])
+    groups = param_groups(m, 0.1, bal.bias_params())
+    in_opt = {id(p) for g in groups for p in g["params"]}
+    x = _to(_mine_inputs(pair, _to(inputs, device)), device)
+    out = _call(m, x)
+    (_first_tensor(out).float().pow(2).mean()).backward()
+    details, ok = [], True
+    loads = {}
+    for name, _, b in bal.routers:
+        idx = bal._idx.get(name)
+        if idx is None:
+            details.append(f"{name}: forward 에서 route_probe 가 안 불림"); ok = False; continue
+        loads[name] = torch.bincount(idx.flatten().long(), minlength=b.numel()).float()
+        if id(b) in in_opt:
+            details.append(f"{name}: bias 가 optimizer 에 들어 있음"); ok = False
+    before = {name: b.detach().clone() for name, _, b in bal.routers}
+    bal.update(rate)
+    for name, _, b in bal.routers:
+        if name not in loads:
+            continue
+        load, delta = loads[name], (b.detach() - before[name]).float()
+        over, under = load > load.mean(), load < load.mean()
+        good = (delta[over] < 0).all().item() and (delta[under] > 0).all().item()
+        ok &= good
+        details.append(f"{name}: 부하 {load.int().tolist()} → bias 변화 부호 {'정상' if good else '반대/없음'}")
+    # bias 를 크게 바꾸면 선택이 바뀌어야 한다
+    name, _, b = bal.routers[0]
+    with torch.no_grad():
+        b.add_(torch.linspace(-10, 10, b.numel(), device=b.device, dtype=b.dtype))
+        _call(m, x)
+    sel =torch.bincount(bal._idx[name].flatten().long(), minlength=b.numel()).float()
+    moved = not torch.equal(sel, loads[name])
+    ok &= moved
+    details.append(f"{name}: bias 를 크게 바꾸면 선택 {'바뀜' if moved else '안 바뀜'}")
+    bal.remove()
+    return BiasReport(ok, len(bal.routers), details)

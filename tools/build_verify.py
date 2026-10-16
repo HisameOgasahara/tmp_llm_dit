@@ -189,6 +189,28 @@ try:
 except Exception:
     traceback.print_exc(limit=4); report("배치 하나 외우기", False)
 """)
+    nb.md("""
+### 원본과 비교할 수 없는 부분
+
+- **수치 미분 (float64)**: 무작위 방향으로 가중치를 ±ε 움직여 잰 손실 변화가 autograd 기울기와 같은지 봅니다.
+  원본이 추론 전용이라 기울기를 비교할 수 없는 모델도 이걸로 backward 를 확인합니다.
+- **라우터 bias 업데이트 (aux-loss-free)**: 원본 추론 코드에는 없는 학습 전용 규칙입니다. 많이 뽑힌 expert 의 bias 는 내려가고
+  적게 뽑힌 쪽은 올라가는지, bias 가 optimizer 에서 빠져 있는지, bias 가 실제로 선택을 바꾸는지 봅니다. 라우터 bias 가 없는 모델은 건너뜁니다.
+""")
+    nb.code("""
+try:
+    f = TR.directional_grad_check(pair["mine"], pair, inputs, dev)
+    print(f"방향 {len(f.rel_errors)}개 상대 오차 {[f'{e:.1e}' for e in f.rel_errors]}  (ε={f.eps})")
+    report("수치 미분 == autograd (float64)", f.ok, max(f.rel_errors))
+except Exception:
+    traceback.print_exc(limit=4); report("수치 미분 == autograd (float64)", False)
+try:
+    b = TR.router_bias_check(pair["mine"], pair, inputs, dev)
+    print("\\n".join(b.details))
+    report("라우터 bias 업데이트" if b.n_routers else "라우터 bias 업데이트 (라우터 bias 없음 → 건너뜀)", b.ok)
+except Exception:
+    traceback.print_exc(limit=4); report("라우터 bias 업데이트", False)
+""")
 
     if spec["SELF_CHECKS"]:
         nb.md("## 단계 전용 자체 점검")
