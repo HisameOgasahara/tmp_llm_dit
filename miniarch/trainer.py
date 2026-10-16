@@ -285,13 +285,14 @@ class Trainer:
 
     def load(self, path: str | None = None) -> None:
         path = path or os.path.join(self.cfg.run_dir, "ckpt.pt")
-        ck = torch.load(path, map_location=self.device, weights_only=False)
+        # CPU 로 읽는다: RNG 상태는 CPU ByteTensor 여야 하고, 가중치·optimizer 상태는 load_state_dict 가 파라미터 device 로 옮긴다
+        ck = torch.load(path, map_location="cpu", weights_only=False)
         self.model.load_state_dict(ck["model"])
         self.opt.load_state_dict(ck["opt"])
         self.step = ck["step"]
-        self.gen.set_state(ck["gen"])
-        torch.set_rng_state(ck["torch_rng"])
+        self.gen.set_state(ck["gen"].cpu())
+        torch.set_rng_state(ck["torch_rng"].cpu())
         if ck["cuda_rng"] is not None and torch.cuda.is_available():
-            torch.cuda.set_rng_state_all(ck["cuda_rng"])
+            torch.cuda.set_rng_state_all([s.cpu() for s in ck["cuda_rng"]])
         random.setstate(ck["py_rng"])
         np.random.set_state(ck["np_rng"])

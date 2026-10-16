@@ -65,6 +65,7 @@ def ref_dit():
 
 # ---------------------------------------------------------------- 레지스트리
 # ref=None 인 케이스는 원본 builder 도 아직 없음 (해당 단계 착수 시 작성).
+# A3(MoE)는 A4·A5a 에, A7b(AttnRes)는 A6b 에 포함되어 함께 검증된다.
 # A2 이후 단계는 verify/stages/ 의 모듈이 CASE 를 정의하고, 아래 _merge_stages() 가 같은 단계 자리를 덮어쓴다.
 
 CASES: list[Case] = [
@@ -73,13 +74,11 @@ CASES: list[Case] = [
     Case("A1", "Llama (RoPE, RMSNorm, SwiGLU, GQA)", "Llama", "transformers/models/llama",
          ref_llama, "miniarch.models.llama"),
     Case("A2", "QK-norm / SWA+full / sink / partial RoPE", "MiMo-V2.6", "HF XiaomiMiMo/*/modeling_mimo_v2.py"),
-    Case("A3", "MoE 단독 비교 (GLM-5.3 DSA+MoE)", "GLM-5.3", "transformers/models/glm_moe_dsa"),
     Case("A5a", "DSA indexer (+층 간 공유)", "GLM-5.3", "transformers/models/glm_moe_dsa"),
     Case("A5b", "블록 top-k sparse (MSA)", "MiniMax-M3", "github MiniMax-AI/MSA tests"),
     Case("A6b", "KDA + gated MLA", "Kimi-K3", "HF moonshotai/Kimi-K3/modeling_kimi_linear.py"),
     Case("A7a", "Hyper-Connections / mHC", "DeepSeek-V4 · Qwen3.8-Flash-Next",
          "transformers/models/deepseek_v4, qwen4_exp"),
-    Case("A7b", "Attention Residuals", "Kimi-K3", "HF moonshotai/Kimi-K3/modeling_kimi_k3.py"),
     Case("A8", "MTP / Engram / CSA2 (Full·Reindex·Reuse)", "DeepSeek-V4.1", "HF deepseek-ai/DeepSeek-V4.1-Flash/inference"),
     Case("B0", "DiT (adaLN-Zero)", "DiT", "diffusers DiTTransformer2DModel",
          ref_dit, "miniarch.models.dit"),
