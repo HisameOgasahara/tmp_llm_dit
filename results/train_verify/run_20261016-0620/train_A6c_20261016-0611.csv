@@ -1,0 +1,6 @@
+check,ok,max_abs
+기울기 == 원본,True,8.416920172749087e-05
+학습 궤적 == 원본 (SGD 30 step),False,0.3831306993961334
+배치 하나 외우기 (next-token CE),True,0.0020980619591965182
+수치 미분 == autograd (float64),False,0.05635673258338222
+라우터 bias 업데이트 (라우터 bias 없음 → 건너뜀),True,

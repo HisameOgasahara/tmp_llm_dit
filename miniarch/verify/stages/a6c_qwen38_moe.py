@@ -64,6 +64,8 @@ def ref():
         rope_parameters={"rope_type": "default", "rope_theta": 10000.0, "partial_rotary_factor": 0.25,
                          "mrope_section": [1, 1, 0]})
     m = Qwen3_5MoeTextModel(cfg)
+    # expert 계산을 원본 eager 루프로 고정 (기본 grouped_mm 은 합산 순서가 달라 학습 중 라우팅이 갈라질 수 있다)
+    m.config._experts_implementation = "eager"
     g = torch.Generator().manual_seed(1)
     with torch.no_grad():  # router 는 0 초기화, expert 는 empty → 명시적으로 채워 라우팅이 실제로 갈리게 한다
         for layer in m.layers:
