@@ -100,7 +100,10 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
    - **3-2. 모델 학습 동작 검증** (구현 완료, Colab 실행 대기 → `notebooks/train_verify/00_run_all`, 순전파 검증과 분리): 모델별 노트북에
      ② 기울기 == 원본, ③ 학습 궤적 == 원본(SGD 30 step), 배치 하나 외우기, ④ float64 수치 미분, 라우터 bias 업데이트
      (원본이 추론 전용인 A5b·A8·A9 는 ②③ 대신 ④ 수치 미분으로 확인)
-   - **3-3. 학습 코드 검증** (2026-10-16 실행: 88개 중 87개 통과, MQAR 재현만 학습 step 부족으로 재실행 대기 → `notebooks/03_train_check`, `results/train_check/`): ⑤ 태스크·마스킹·정답 누수·학습/평가 분리,
+   - **3-3. 학습 코드 검증 ✅** (2026-10-16, `notebooks/03_train_check`, `results/train_check/`): 88개 전부 통과.
+     MQAR 재현: 처음엔 모든 키를 한 번씩 묻는 설계라 소거법 지름길(정확도 0.34)에 갇힘 → 질문 중복 허용으로 수정.
+     Llama(2층, d=128)가 16,500 step 까지 0.16 에서 정체하다 17,000~19,500 step 에 0.28 → 0.91 로 급상승 (induction 회로 형성 시점).
+     세부 항목: ⑤ 태스크·마스킹·정답 누수·학습/평가 분리,
      lr 스케줄·weight decay 대상·평가 순수성·seed 재현·체크포인트 재개·TensorBoard 기록, 검증된 LM 전부 + DiT 를 공용 루프로 짧게 학습,
      ⑥ 알려진 결과 재현(Llama 가 MQAR 풂)
    - 공용 학습 루프 `miniarch/trainer.py`: 태그 이름 통일, run 폴더 = runs/<태스크>/<모델>/<변형>/seed<k>, MI 지표 자동 수집
