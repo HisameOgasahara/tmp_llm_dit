@@ -118,7 +118,7 @@ CASES: list[Case] = [
     Case("A1", "Llama (RoPE, RMSNorm, SwiGLU, GQA)", "Llama", "transformers/models/llama",
          ref_llama, "miniarch.models.llama"),
     Case("A2", "QK-norm / SWA+full / sink / partial RoPE", "MiMo-V2.6", "HF XiaomiMiMo/*/modeling_mimo_v2.py"),
-    Case("A4", "DeepSeek-V4 전체: sliding/CSA/HCA attention + indexer + sink + mHC + sqrt-softplus MoE",
+    Case("A4", "DeepSeek-V4 전체: K=V 단일 head + sliding/CSA/HCA attention + indexer + sink + mHC + sqrt-softplus MoE",
          "DeepSeek-V4-Flash", "transformers/models/deepseek_v4", ref_deepseek_v4, "miniarch.models.deepseek_v4",
          atol=1e-4),
     Case("A3", "MoE 단독 비교 (GLM-5.3 DSA+MoE)", "GLM-5.3", "transformers/models/glm_moe_dsa"),
@@ -130,7 +130,7 @@ CASES: list[Case] = [
     Case("A7a", "Hyper-Connections / mHC", "DeepSeek-V4 · Qwen3.8-Flash-Next",
          "transformers/models/deepseek_v4, qwen4_exp"),
     Case("A7b", "Attention Residuals", "Kimi-K3", "HF moonshotai/Kimi-K3/modeling_kimi_k3.py"),
-    Case("A8", "MTP / Engram / 층 간 KV 공유", "DeepSeek-V4.1", "HF deepseek-ai/DeepSeek-V4.1-Flash/inference"),
+    Case("A8", "MTP / Engram / CSA2 (Full·Reindex·Reuse)", "DeepSeek-V4.1", "HF deepseek-ai/DeepSeek-V4.1-Flash/inference"),
     Case("B0", "DiT (adaLN-Zero)", "DiT", "diffusers DiTTransformer2DModel",
          ref_dit, "miniarch.models.dit"),
     Case("B1", "MM-DiT (dual stream)", "Qwen-Image", "DiffSynth qwen_image_dit.py · ComfyUI qwen_image"),
@@ -138,8 +138,9 @@ CASES: list[Case] = [
          "DiffSynth qwen_image_21_dit.py, krea2_dit.py"),
     Case("B3", "Cosmos-Predict2 계열 DiT", "Anima", "DiffSynth anima_dit.py · ComfyUI anima, cosmos"),
     Case("B4", "3D 비디오 + 오디오 DiT", "MiniMax-H3", "DiffSynth minimax_h3_dit.py"),
-    Case("C0", "미니 VLM (ViT + projector + M-RoPE)", "Qwen3-VL", "transformers/models/qwen3_vl"),
-    Case("C1", "MoT world model / VLA", "Cosmos3", "diffusers transformer_cosmos3.py · github nvidia/cosmos"),
+    Case("C0", "미니 VLM (하이브리드 LM + 내장 ViT + M-RoPE)", "Qwen3.8-27B", "transformers/models/qwen3_5"),
+    Case("C1", "MoT world model / VLA", "Cosmos3 (비교: GR00T-N1.7)",
+         "diffusers transformer_cosmos3.py · github nvidia/cosmos · NVIDIA/Isaac-GR00T"),
 ]
 
 
