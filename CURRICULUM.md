@@ -5,7 +5,9 @@
 2. 측정 세트(학습 로그, 태스크 지표, attention map, probe, ablation)는 **공용 코드 하나**로 모든 모델에 같게 적용합니다. 모델마다 따로 짜지 않고, hook 지점 이름(`attn_probs`, `sink_probe`, `route_probe` 등)으로 자동 수집합니다.
 3. 모든 블록은 실험 전에 두 가지 검증을 통과해야 합니다.
    - **forward 검증**: 원본과 출력이 같은가 (층별 비교, causal 누수, 단계 전용 점검)
-   - **학습 동작 검증**: 원본과 기울기가 같은가, 배치 하나를 외울 수 있는가 (NaN 없음, 기울기를 못 받는 파라미터 확인)
+   - **학습 동작 검증**: 원본과 기울기가 같은가, 원본과 나란히 학습했을 때 궤적(손실·가중치)이 같은가, 배치 하나를 외울 수 있는가
+   - **학습 코드 검증**: 원본에 없는 학습 전용 부품(MoE bias 업데이트, aux loss, MTP 손실)은 정의대로 단위 테스트, 커스텀 연산은 float64 수치 미분.
+     학습 루프·데이터는 손실 마스킹, 정답 누수, train/eval 분리, 시드 재현, 체크포인트 재개를 테스트. 마지막으로 알려진 결과(modadd grokking, MQAR) 재현
    스위치는 검증 통과 후에 추가하고, 모든 스위치를 기본값으로 둔 상태가 원본과 같은지 다시 확인합니다.
 4. 기본 크기는 d_model 256, 4~8층, head 4~8개, 5~20M 파라미터입니다. T4 기준 태스크당 30분~2시간입니다.
 
@@ -95,8 +97,10 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
    - LLM: A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA(attention 층 단위), A6a Qwen3.6, A6b Kimi-K3, A6c Qwen3.8 플래그십 2.4T, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash, A9 Step-5-Preview, A10 Gemma 4
    - DiT: B1 Qwen-Image, B2 Krea-2, B3 Anima, B4 MiniMax-H3 / 멀티모달: C0 Qwen3.8-27B 비전, C1 Cosmos3, C2 Qwen-Image-2.1
    - ⚠️ 여기까지는 forward 만 검증했습니다. 학습 동작 검증이 빠져 있었습니다.
-   - **3-2. 학습 동작 검증** (진행 중): 모든 검증 노트북에 "기울기 == 원본", "배치 하나 외우기" 추가 → `00_run_all` 재실행
-   - **3-3. 공용 학습·측정 코드**: 학습 로그(손실, 기울기 norm, lr, 속도), 태스크 지표, MI 지표(attention 엔트로피·거리, sink 비율, expert 부하, indexer 선택)를 모든 모델에 같게 기록
+   - **3-2. 학습 동작 검증** (진행 중): 모든 검증 노트북에 "기울기 == 원본", "학습 궤적 == 원본", "배치 하나 외우기" 추가 → `00_run_all` 재실행
+     (원본이 추론 전용인 A5b·A8·A9 는 원본 비교를 건너뛰고 3-3 의 수치 미분으로 대신)
+   - **3-3. 학습 코드 검증**: 학습 전용 부품 단위 테스트, 수치 미분, 학습 루프·데이터 테스트
+   - **3-4. 공용 학습·측정 코드** (TensorBoard, 태그 통일, run 폴더 = 태스크/모델/스위치/seed): 학습 로그(손실, 기울기 norm, lr, 속도), 태스크 지표, MI 지표(attention 엔트로피·거리, sink 비율, expert 부하, indexer 선택)를 모든 모델에 같게 기록
    - **다음:** MQAR 태스크 추가 (`miniarch/tasks`) → 4번 실험
 4. 부품별 ablation 실험: A1 → A2 → DeepSeek-V4 스위치 (sliding만 → +CSA/HCA → +MoE → +mHC), Qwen3.6 선형:full 비율. 태스크 MQAR → 덧셈 → 미로
 5. DiT·멀티모달 실험: 편집, Moving-MNIST, 이미지 질의응답, 미로 행동

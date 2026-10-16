@@ -145,3 +145,78 @@ def overfit_batch(mine: nn.Module, pair: dict, inputs, device: str, steps: int =
     no_grad = sorted(names[id(p)] for p in params if id(p) not in touched)
     ok = finite and curve[-1] <= target_ratio * curve[0]
     return OverfitReport(ok, curve[0], curve[-1], "next-token CE" if use_ce else "MSE(고정 목표)", finite, no_grad, curve)
+
+
+@dataclass
+class ParityReport:
+    ok: bool
+    steps: int
+    loss_ref: list[float]
+    loss_mine: list[float]
+    max_loss_rel: float
+    max_param_rel: float
+    worst_param: str
+    note: str = ""
+
+
+def train_parity(ref: nn.Module, pair: dict, inputs, device: str, steps: int = 30, lr: float = 0.01,
+                 rtol: float = 1e-3) -> ParityReport:
+    """원본과 내 구현을 같은 가중치·같은 데이터·같은 optimizer 로 나란히 학습해 step 별 손실과 최종 가중치를 비교한다.
+
+    손실 = MSE(출력, 고정 난수 목표). optimizer 는 SGD(momentum 0.9):
+    Adam 은 기울기를 크기로 나눠서 1e-9 수준의 잡음 차이도 같은 크기의 업데이트 차이로 키우므로 궤적 비교에 맞지 않다.
+    원본에서 학습되지 않는 파라미터(requires_grad=False)는 내 쪽도 같이 얼린다.
+    """
+    ref = copy.deepcopy(ref).to(device).float().train()
+    mine = copy.deepcopy(pair["mine"]).to(device).float().train()
+    force_eager(ref)
+    rep = copy_weights(ref, mine, pair.get("name_map"), pair.get("transforms"))
+    if not rep.ok:
+        return ParityReport(False, 0, [], [], float("nan"), float("nan"), "", f"가중치 복사 실패: {rep}")
+    mine_params = dict(mine.named_parameters())
+    transformed = set((pair.get("transforms") or {}).keys())
+    mapped = []   # (원본 이름, 내 이름) — 최종 가중치 비교용
+    for name, p in ref.named_parameters():
+        mname = _resolve(pair.get("name_map"), name)
+        if mname in mine_params:
+            mine_params[mname].requires_grad_(p.requires_grad)
+            if mname not in transformed:
+                mapped.append((name, mname))
+
+    x_ref = _to(inputs, device)
+    x_mine = _to(_mine_inputs(pair, x_ref), device)
+    out_fn_r, out_fn_m = pair.get("out_fn_ref", _first_tensor), pair.get("out_fn_mine", _first_tensor)
+    with torch.no_grad():
+        shape = out_fn_r(_call(ref, x_ref)).shape
+    target = torch.randn(shape, generator=torch.Generator().manual_seed(5)).to(device)
+    opt_r = torch.optim.SGD([p for p in ref.parameters() if p.requires_grad], lr=lr, momentum=0.9)
+    opt_m = torch.optim.SGD([p for p in mine.parameters() if p.requires_grad], lr=lr, momentum=0.9)
+
+    lr_, lm_ = [], []
+    for _ in range(steps):
+        loss_r = nn.functional.mse_loss(out_fn_r(_call(ref, x_ref)).float(), target)
+        if not loss_r.requires_grad:
+            return ParityReport(False, 0, [], [], float("nan"), float("nan"), "",
+                                "원본 출력에 기울기가 없음 (추론 전용 코드: no_grad/inference_mode)")
+        loss_m = nn.functional.mse_loss(out_fn_m(_call(mine, x_mine)).float(), target)
+        for opt, loss in ((opt_r, loss_r), (opt_m, loss_m)):
+            opt.zero_grad(set_to_none=True)
+            loss.backward()
+            opt.step()
+        lr_.append(loss_r.item())
+        lm_.append(loss_m.item())
+        if not (torch.isfinite(loss_r) and torch.isfinite(loss_m)):
+            return ParityReport(False, len(lr_), lr_, lm_, float("nan"), float("nan"), "",
+                                "손실이 발산 (NaN/inf) — lr 을 낮춰 다시 확인")
+
+    max_loss_rel = max(abs(a - b) / (abs(a) + 1e-12) for a, b in zip(lr_, lm_))
+    rp, mp = dict(ref.named_parameters()), dict(mine.named_parameters())
+    worst, max_param_rel = "", 0.0
+    with torch.no_grad():
+        for rn, mn in mapped:
+            a, b = rp[rn], mp[mn]
+            rel = ((a - b).abs().max() / (a.abs().max() + 1e-12)).item()
+            if rel > max_param_rel:
+                max_param_rel, worst = rel, rn
+    ok = max_loss_rel <= rtol and max_param_rel <= rtol and lr_[-1] < lr_[0]
+    return ParityReport(ok, steps, lr_, lm_, max_loss_rel, max_param_rel, worst)

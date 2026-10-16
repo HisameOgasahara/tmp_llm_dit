@@ -140,6 +140,8 @@ report("내 구현 " + r.name, r.ok, r.max_abs)
 forward 가 원본과 같아도 학습이 되는지는 따로 확인해야 합니다.
 - **기울기 == 원본**: 같은 가중치·같은 손실로 원본과 내 구현을 backward 해서 파라미터 기울기를 비교합니다 (파라미터별 상대 오차 ≤ 1e-3).
   원본이 추론 전용 코드(no_grad)면 건너뜁니다.
+- **학습 궤적 == 원본**: 같은 가중치·데이터·optimizer(SGD momentum 0.9, 30 step)로 원본과 내 구현을 나란히 학습해
+  step 별 손실과 최종 가중치를 비교합니다 (상대차 ≤ 1e-3). Adam 은 아주 작은 잡음 차이를 키워서 궤적 비교에 쓰지 않습니다.
 - **배치 하나 외우기**: 고정 배치 하나로 300 step 학습해 손실이 처음의 20% 이하로 내려가는지 봅니다 (LM은 다음 토큰 CE, 그 외는 고정 목표 MSE).
   NaN/inf 가 없어야 하고, 기울기를 한 번도 받지 못한 파라미터를 보여줍니다 (MoE 에서 안 뽑힌 expert 는 정상).
 """)
@@ -162,6 +164,19 @@ try:
         report("기울기 == 원본", g.ok, g.max_rel)
 except Exception:
     traceback.print_exc(limit=4); report("기울기 == 원본", False)
+""")
+    nb.code("""
+try:
+    t = TR.train_parity(ref, pair, inputs, dev)
+    if t.note.startswith("원본 출력에 기울기가 없음"):
+        print("⏭️", t.note); report("학습 궤적 == 원본 (원본 추론 전용 → 건너뜀)", True)
+    else:
+        print(f"{t.steps} step  손실 최대 상대차 {t.max_loss_rel:.2e}  최종 가중치 최대 상대차 {t.max_param_rel:.2e} ({t.worst_param})", t.note)
+        print("  원본:", " ".join(f"{v:.4g}" for v in t.loss_ref[::6]))
+        print("  내것:", " ".join(f"{v:.4g}" for v in t.loss_mine[::6]))
+        report("학습 궤적 == 원본 (SGD 30 step)", t.ok, max(t.max_loss_rel, t.max_param_rel))
+except Exception:
+    traceback.print_exc(limit=4); report("학습 궤적 == 원본", False)
 """)
     nb.code("""
 try:
