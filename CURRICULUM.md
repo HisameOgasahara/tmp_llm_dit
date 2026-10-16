@@ -49,7 +49,8 @@
 
 ## 진행 순서
 1. Phase 0: 검증 도구 (`00_check`) ✅
-2. A0, A1, B0 구현 ✅ → 첫 실험 `01_modadd`, `02_fashion_dit` ← 현재
+2. A0, A1, B0 구현 ✅ → 첫 실험 `01_modadd`, `02_fashion_dit` ✅
+3. A6a Qwen3.6 하이브리드 (Gated DeltaNet + Gated Attention) ← 현재, 다음: DeepSeek-V4.1-Flash (MLA V4 · mHC · indexer · Engram)
 3. A2 ~ A5
 4. A6 ~ A8
 5. B1 ~ B4, C0 ~ C1

@@ -52,6 +52,21 @@ def ref_llama():
     return LlamaModel(cfg), _ids()
 
 
+def ref_qwen36():
+    """Qwen3.5/3.6 텍스트 모델. 선형 3층 + full 1층, 시퀀스 100 (chunk 64 → chunk 2개 + padding 경로 검사)."""
+    from transformers.models.qwen3_5.configuration_qwen3_5 import Qwen3_5TextConfig
+    from transformers.models.qwen3_5.modeling_qwen3_5 import Qwen3_5TextModel
+    cfg = Qwen3_5TextConfig(
+        vocab_size=VOCAB, hidden_size=64, intermediate_size=128, num_hidden_layers=4,
+        num_attention_heads=4, num_key_value_heads=2, head_dim=16,
+        linear_num_key_heads=2, linear_num_value_heads=4, linear_key_head_dim=16, linear_value_head_dim=16,
+        linear_conv_kernel_dim=4, max_position_embeddings=256, use_cache=False,
+        rope_parameters={"rope_type": "default", "rope_theta": 10000.0, "partial_rotary_factor": 0.25,
+                         "mrope_section": [1, 1, 0]})
+    ids = torch.randint(0, VOCAB, (BATCH, 100), generator=torch.Generator().manual_seed(0))
+    return Qwen3_5TextModel(cfg), {"input_ids": ids}
+
+
 def ref_dit():
     from diffusers import DiTTransformer2DModel
     m = DiTTransformer2DModel(num_attention_heads=4, attention_head_dim=16, in_channels=1,
@@ -77,7 +92,8 @@ CASES: list[Case] = [
     Case("A4", "MLA (V3 → V4: 1 KV head, o_lora)", "DeepSeek-V4", "transformers/models/deepseek_v4"),
     Case("A5a", "DSA indexer (+층 간 공유)", "GLM-5.3", "transformers/models/glm_moe_dsa"),
     Case("A5b", "블록 top-k sparse (MSA)", "MiniMax-M3", "github MiniMax-AI/MSA tests"),
-    Case("A6a", "Gated DeltaNet + Gated Attention", "Qwen3.6/3.8-27B", "transformers/models/qwen3_5"),
+    Case("A6a", "Gated DeltaNet + Gated Attention", "Qwen3.6/3.8-27B", "transformers/models/qwen3_5",
+         ref_qwen36, "miniarch.models.qwen36", atol=1e-4),
     Case("A6b", "KDA + gated MLA", "Kimi-K3", "HF moonshotai/Kimi-K3/modeling_kimi_linear.py"),
     Case("A7a", "Hyper-Connections / mHC", "DeepSeek-V4 · Qwen3.8-Flash-Next",
          "transformers/models/deepseek_v4, qwen4_exp"),
