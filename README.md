@@ -12,6 +12,7 @@
 | `01_modadd` | GPT-2 vs Llama: modular addition grokking, 푸리에 해법, attention map, weight decay ablation (~10분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/01_modadd.ipynb) |
 | `02_fashion_dit` | DiT: FashionMNIST 클래스 조건 생성(flow matching + CFG), 층별 attention 거리 (~25분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/02_fashion_dit.ipynb) |
 | `03_train_check` | 학습 코드 검증: 태스크·마스킹·누수·분리, lr·weight decay, 재현·재개, TensorBoard 기록, 검증된 모델 전부 공용 루프로 짧게 학습, MQAR 재현 (~15분) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/03_train_check.ipynb) |
+| `04_mqar` | 4단계 부품별 실험 (MQAR): full↔sliding·sink, DeepSeek-V4 스위치, 선형:full 비율, 키 개수 sweep, MoE·라우터 bias. 거리별 정확도·MI 지표, Drive 에 이어서 학습 (그룹당 수십 분~수 시간) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/04_mqar.ipynb) |
 
 ### 모델별 검증 (`notebooks/verify/`)
 

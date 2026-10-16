@@ -118,4 +118,5 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
    - 아직 없는 학습 전용 부품: MoE aux loss(Qwen·Gemma 방식), MTP 손실 → 해당 실험에 들어갈 때 추가
    - **검증 단계 완료** (순전파 · 학습 동작 · 학습 코드). **다음:** 4번 실험
 4. 부품별 ablation 실험: A1 → A2 → DeepSeek-V4 스위치 (sliding만 → +CSA/HCA → +MoE → +mHC), Qwen3.6 선형:full 비율. 태스크 MQAR → 덧셈 → 미로
+   - **4-1. MQAR 실험 노트북** (2026-10-16, `notebooks/04_mqar`, `miniarch/experiments/mqar_sweep.py`): 그룹 window · dsv4 · linear · capacity · moe, d_model=128, 짝 16개. 실행 전
 5. DiT·멀티모달 실험: 편집, Moving-MNIST, 이미지 질의응답, 미로 행동
