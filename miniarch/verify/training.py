@@ -85,6 +85,7 @@ class GradReport:
 
 
 INFERENCE_ONLY = "원본 출력에 기울기가 없음 (추론 전용 코드: no_grad/inference_mode)"
+TRUNCATED = "원본 그래프 중간에서 기울기가 끊김 (일부 모듈이 추론 전용 경로) → 원본과 기울기 비교 불가"
 
 
 def grad_equivalence(ref: nn.Module, pair: dict, inputs, device: str, rtol: float = 1e-3) -> GradReport:
@@ -121,7 +122,14 @@ def grad_equivalence(ref: nn.Module, pair: dict, inputs, device: str, rtol: floa
         if rel > max_rel:
             max_rel, worst = rel, name
     note = "원본 eval 모드로 비교 (원본이 학습 모드를 거부)" if not ref.training else ""
-    return GradReport(max_rel <= rtol and n > 0, n, max_rel, worst, skipped, note)
+    ok = max_rel <= rtol and n > 0
+    # 원본에서는 기울기가 안 흐르는데 내 쪽은 흐르는 파라미터가 있으면, 원본 그래프가 그 지점에서 끊긴 것이고
+    # 그보다 앞쪽 파라미터의 기울기도 원본과 비교할 수 없다 (예: Kimi 원본 MoE 는 eval 모드에서 no_grad 추론 경로)
+    cut = [n_ for n_ in skipped if mp[_resolve(pair.get("name_map"), n_)].grad is not None
+           and mp[_resolve(pair.get("name_map"), n_)].grad.abs().sum() > 0]
+    if cut and not ok:
+        return GradReport(False, n, max_rel, worst, skipped, TRUNCATED)
+    return GradReport(ok, n, max_rel, worst, skipped, note)
 
 
 @dataclass
@@ -214,6 +222,11 @@ def train_parity(ref: nn.Module, pair: dict, inputs, device: str, steps: int = 3
     ref, mine, rep, x_ref, x_mine = _prepare(ref, pair, inputs, device, copy_mine=True)
     if not rep.ok:
         return ParityReport(False, 0, [], [], float("nan"), float("nan"), "", f"가중치 복사 실패: {rep}")
+    moe_note = ""
+    if any(n.endswith("route_probe") for n, _ in mine.named_modules()):
+        # MoE: 두 구현의 1e-7 수준 합산 순서 차이로 top-k 동점 근처 선택이 갈라지면 그 뒤 궤적은 원리적으로 달라진다
+        steps = min(steps, 10)
+        moe_note = "MoE → 라우팅이 갈라지기 전 10 step 만 비교"
     out_fn_r, out_fn_m = pair.get("out_fn_ref", _first_tensor), pair.get("out_fn_mine", _first_tensor)
     out0 = out_fn_r(_ref_call(ref, x_ref))
     if not ref.training:
@@ -259,7 +272,7 @@ def train_parity(ref: nn.Module, pair: dict, inputs, device: str, steps: int = 3
             rel = ((a - b).abs().max() / (a.abs().max() + 1e-12)).item()
             if rel > max_param_rel:
                 max_param_rel, worst = rel, rn
-    note = "원본 eval 모드로 비교 (원본이 학습 모드를 거부)" if not ref.training else ""
+    note = ("원본 eval 모드로 비교 (원본이 학습 모드를 거부) " if not ref.training else "") + moe_note
     if lr_[-1] >= lr_[0]:
         note += " 원본 손실이 줄지 않음"
     ok = max_loss_rel <= rtol and max_param_rel <= rtol and lr_[-1] < lr_[0]
