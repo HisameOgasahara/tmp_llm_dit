@@ -15,7 +15,7 @@
 ### 모델별 검증 (`notebooks/verify/`)
 
 모델마다 노트북이 하나씩 있고, 서로 독립적으로 돌아갑니다. 원본 구조 확인 → 원본 동치 → causal 누수 → 단계 전용 점검 순서입니다.
-전체 단계를 한 표로 보려면 `00_check`의 현황표를 쓰세요.
+**한 번에 전부 돌리기:** [`00_run_all`](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/00_run_all.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/00_run_all.ipynb) — 모델 노트북을 각각 새 프로세스로 실행하고, 요약표와 결과 zip(실행된 노트북 + csv)을 내려받습니다.
 
 | 단계 | 모델 | 열기 |
 |---|---|---|

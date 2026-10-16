@@ -35,9 +35,10 @@ if not os.path.exists(REPO_DIR):
 else:
     !git -C {{REPO_DIR}} pull -q
 %cd {{REPO_DIR}}
-!pip -q install -U -r requirements-colab.txt
-# Colab 기본 torchao 가 최신 diffusers 와 버전이 안 맞아 import 가 깨짐 → 쓰지 않으므로 제거
-!pip -q uninstall -y torchao
+if not os.environ.get("MINIARCH_SKIP_PIP"):   # 전체 실행 노트북이 한 번만 설치하고 넘길 때 건너뜀
+    !pip -q install -U -r requirements-colab.txt
+    # Colab 기본 torchao 가 최신 diffusers 와 버전이 안 맞아 import 가 깨짐 → 쓰지 않으므로 제거
+    !pip -q uninstall -y torchao
 """)
         self.code("""
 import sys, torch

@@ -49,7 +49,8 @@ def build(module_name):
 """)
     nb.setup()
     if spec["PIP"]:
-        nb.code("!pip -q install -U " + " ".join("'" + p.strip("'\"") + "'" for p in spec["PIP"]))  # 따옴표: >= 가 셸 리다이렉트가 되지 않게
+        nb.code("if not os.environ.get('MINIARCH_SKIP_PIP'):   # 전체 실행 노트북이 한 번에 설치\n"
+                "    !pip -q install -U " + " ".join("'" + p.strip("'\"") + "'" for p in spec["PIP"]))  # 따옴표: >= 가 셸 리다이렉트가 되지 않게
     nb.code(f"""
 from miniarch import verify as V
 from miniarch.verify import stages
@@ -157,8 +158,91 @@ print("전체:", "✅ 모두 통과" if df.ok.all() else "❌ 실패 있음")
     return path, spec
 
 
+def build_run_all(specs):
+    """모든 모델 노트북을 각각 별도 프로세스로 실행하고 결과를 한 표로 모으는 노트북."""
+    path = "notebooks/verify/00_run_all.ipynb"
+    stages = [s["STAGE"] for s in specs]
+    pips = sorted({p.strip("'\"") for s in specs for p in s["PIP"]})
+    nb = NB()
+    nb.md(f"""
+# 검증 전체 실행
+
+{nb.badge(path)}
+
+`notebooks/verify/`의 모델별 검증 노트북을 **한 번에** 돌립니다.
+
+- 노트북마다 **새 프로세스**(`jupyter nbconvert --execute`)로 실행합니다. 원본 코드 패치나 원격 코드 import 같은 전역 상태가 다음 모델로 새지 않고, 끝나면 GPU 메모리도 비워집니다.
+- 패키지는 여기서 한 번만 설치하고, 각 노트북의 설치 셀은 건너뜁니다.
+- 한 노트북에서 에러가 나도 멈추지 않고 다음으로 넘어갑니다. 실행된 노트북(출력 포함)은 `results/executed/`에 남습니다.
+- 끝나면 요약표를 보여주고, 결과 전체를 zip으로 내려받습니다.
+
+T4 기준 모델당 2~5분 정도입니다. 일부만 돌리려면 아래 `SELECT`에 단계 이름을 적으세요.
+""")
+    nb.setup()
+    nb.code(f"""
+# 모든 모델 노트북이 요구하는 추가 패키지 (한 번만 설치)
+!pip -q install -U {" ".join("'" + p + "'" for p in pips)}
+!pip -q install -U nbconvert ipykernel
+""")
+    nb.code(f"""
+import glob, subprocess, time, pandas as pd
+SELECT = None   # 예: ["B1", "B2", "C2"]  (None = 전부: {", ".join(stages)})
+
+books = sorted(p for p in glob.glob("notebooks/verify/*.ipynb") if not os.path.basename(p).startswith("00_"))
+if SELECT:
+    books = [p for p in books if os.path.basename(p).split("_")[0] in SELECT]
+os.makedirs("results/executed", exist_ok=True)
+env = dict(os.environ, MINIARCH_SKIP_PIP="1")
+runs = []
+for p in books:
+    name = os.path.basename(p)
+    t0 = time.time()
+    r = subprocess.run(["jupyter", "nbconvert", "--to", "notebook", "--execute", "--allow-errors",
+                        "--ExecutePreprocessor.timeout=1800", "--output-dir", "results/executed", p],
+                       env=env, capture_output=True, text=True)
+    runs.append({{"notebook": name, "exit": r.returncode, "min": round((time.time() - t0) / 60, 1)}})
+    print(f"{{'✅' if r.returncode == 0 else '💥'}} {{name:<34}} {{runs[-1]['min']}}분")
+    if r.returncode:
+        print(r.stderr[-1500:])
+""")
+    nb.md("""
+## 요약
+
+단계마다 가장 최근 결과 csv를 읽습니다. `통과/전체`가 다르면 아래에 실패한 점검 이름이 나옵니다.
+csv가 없으면 노트북이 저장 셀까지 못 간 것이니 `results/executed/`의 해당 노트북 출력을 보세요.
+""")
+    nb.code("""
+rows, fails = [], []
+for p in books:
+    stage = os.path.basename(p).split("_")[0]
+    csvs = sorted(glob.glob(f"results/verify_{stage}_*.csv"))
+    if not csvs:
+        rows.append({"stage": stage, "통과/전체": "-", "결과": "💥 csv 없음"}); continue
+    df = pd.read_csv(csvs[-1])
+    rows.append({"stage": stage, "통과/전체": f"{int(df.ok.sum())}/{len(df)}", "결과": "✅" if df.ok.all() else "❌"})
+    fails += [f"{stage}: {c}" for c in df.loc[~df.ok, "check"]]
+summary = pd.DataFrame(rows)
+print(summary.to_string(index=False))
+print("\\n실패한 점검:" if fails else "\\n모든 점검 통과", *fails, sep="\\n  ")
+""")
+    nb.code("""
+import datetime, shutil
+stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M")
+summary.to_csv(f"results/verify_summary_{stamp}.csv", index=False)
+zip_path = shutil.make_archive(f"/content/verify_results_{stamp}", "zip", "results")
+print("zip:", zip_path)
+try:
+    from google.colab import files
+    files.download(zip_path)
+except Exception as e:
+    print("자동 다운로드 실패, 왼쪽 파일 탭에서 받으세요:", e)
+""")
+    nb.save(path)
+
+
 if __name__ == "__main__":
     os.makedirs(os.path.join(ROOT, "notebooks", "verify"), exist_ok=True)
     names = sys.argv[1:] or sorted(f[:-3] for f in os.listdir(STAGES_DIR) if f.endswith(".py") and not f.startswith("_"))
-    for n in names:
-        build(n)
+    specs = [build(n)[1] for n in names]
+    if not sys.argv[1:]:
+        build_run_all(specs)
