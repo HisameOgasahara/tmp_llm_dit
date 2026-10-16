@@ -17,13 +17,25 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
+import traceback
+
+# 파일 이름 = f"{STAGE.lower()}_{SLUG}.py" (예: a6b_kimi_k3.py)
+
+
+def _names():
+    return sorted(i.name for i in pkgutil.iter_modules(__path__) if not i.name.startswith("_"))
 
 
 def modules():
-    for info in sorted(pkgutil.iter_modules(__path__), key=lambda m: m.name):
-        if not info.name.startswith("_"):
-            yield importlib.import_module(f"{__name__}.{info.name}")
+    """모든 단계 모듈. 하나가 import 에 실패해도 나머지는 계속 (경고만 출력)."""
+    for n in _names():
+        try:
+            yield importlib.import_module(f"{__name__}.{n}")
+        except Exception:
+            print(f"⚠️ stages.{n} import 실패 (이 단계만 빠짐)\n{traceback.format_exc(limit=2)}")
 
 
 def get(stage: str):
-    return next(m for m in modules() if m.STAGE == stage)
+    """해당 단계 모듈만 import (다른 단계 모듈이 깨져 있어도 영향 없음)."""
+    n = next(n for n in _names() if n.startswith(stage.lower() + "_"))
+    return importlib.import_module(f"{__name__}.{n}")

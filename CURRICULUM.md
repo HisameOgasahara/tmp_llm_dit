@@ -83,11 +83,8 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
 2. 기준선 A0 GPT-2 · A1 Llama · B0 DiT 구현 ✅ → 첫 실험 `01_modadd`, `02_fashion_dit` ✅
    - `01_modadd` 100k-step 긴 학습: 셀 오류 수정 후 재실행 필요
 3. 최신 블록 (진행 중)
-   - A6a Qwen3.6 하이브리드 (Gated DeltaNet + Gated Attention) — 구현 완료, `00_check` 미실행
-   - A4 DeepSeek-V4 (A3·A4·A5·A7 부품 포함) — 구현 완료, `00_check` 미실행
-   - **다음 1:** Colab에서 `00_check` 실행 → A4·A6a 검증
-   - **다음 2:** A2 MiMo-V2.6 구현·검증 (건너뛴 단계 복구)
-   - **다음 3:** MQAR 태스크 추가 (`miniarch/tasks`)
+   - 구현 완료, Colab 검증 대기 (`notebooks/verify/` 모델별 노트북): A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA, A6a Qwen3.6, A6b Kimi-K3, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash
+   - **다음 1:** 모델별 검증 노트북 실행 → FAIL 난 모델 수정
+   - **다음 2:** MQAR 태스크 추가 (`miniarch/tasks`)
 4. 부품별 ablation 실험: A1 → A2 → DeepSeek-V4 스위치 (sliding만 → +CSA/HCA → +MoE → +mHC), Qwen3.6 선형:full 비율. 태스크 MQAR → 덧셈 → 미로
-5. 나머지 LLM: DeepSeek-V4.1 (Engram, CSA2), Kimi-K3 (KDA + gated MLA + AttnRes), GLM-5.3 (MLA + DSA), MiniMax-M3
-6. B1 ~ B4, C0 ~ C2
+5. B1 ~ B4, C0 ~ C2 (모델별 검증 노트북 방식 그대로)

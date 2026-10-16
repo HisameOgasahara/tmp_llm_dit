@@ -19,8 +19,14 @@
 
 | 단계 | 모델 | 열기 |
 |---|---|---|
+| A2 | MiMo-V2.6 (SWA+full, sink, MoE) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A2_mimo_v26.ipynb) |
 | A4 | DeepSeek-V4 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A4_deepseek_v4.ipynb) |
+| A5a | GLM-5.3 (MLA + DSA indexer + MoE) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A5a_glm53.ipynb) |
+| A5b | MiniMax-M3 MSA (블록 top-k, attention 층 단위) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A5b_minimax_msa.ipynb) |
 | A6a | Qwen3.6 하이브리드 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A6a_qwen36.ipynb) |
+| A6b | Kimi-K3 (KDA + gated MLA + AttnRes) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A6b_kimi_k3.ipynb) |
+| A7a | Qwen3.8-Flash-Next (HC, indexer, n-gram) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A7a_qwen38_flash_next.ipynb) |
+| A8 | DeepSeek-V4.1-Flash (CSA2, Engram) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A8_deepseek_v41.ipynb) |
 
 ## 실행 방법
 
