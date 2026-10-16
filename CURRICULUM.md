@@ -15,6 +15,7 @@
 | DeepSeek-V4 | 2026-07~08 | K = V 단일 head + sliding/CSA/HCA attention (MLA 아님), Lightning Indexer, sink, mHC, sqrt-softplus MoE | transformers `deepseek_v4` ✅ | Flash(43층) / Pro(61층) |
 | Kimi-K3 | 2026-06 | KDA 3 : gated MLA 1, Attention Residuals, latent MoE | HF `modeling_kimi_k3.py`, `modeling_kimi_linear.py` ✅ | 단일 |
 | Qwen3.6 / 3.8-27B | 2026-08 | Gated DeltaNet 3 : Gated Attention 1, partial RoPE. 3.8-27B는 비전 인코더 내장(이미지·비디오 입력) | transformers `qwen3_5` ✅ | 27B dense / 35B-A3B MoE / 2.4T(오픈 가중치는 텍스트 전용) |
+| Qwen3.8-2.4T-A95B (플래그십) | 2026-08 | 위 하이브리드 92층 + MoE (expert 512개 중 10개 + sigmoid 게이트 shared expert). HC·indexer·n-gram 없음. 오픈 가중치는 텍스트 전용 | transformers `qwen3_5_moe` ✅ | 2.4T-A95B / 3.6-35B-A3B |
 | Qwen3.8-Flash-Next | 2026-08 | 위 + HC, sparse indexer, n-gram 임베딩, 비전 인코더 내장 | transformers `qwen4_exp` ✅ | 125B-A6B |
 | GLM-5.3 | 2026-08 | MLA + DSA (indexer 4층마다 공유) | transformers `glm_moe_dsa` ✅ | 일반 / Flash(구조 다름) |
 | MiniMax-M3 | 2026-06 | GQA + 블록 top-k sparse (MSA) | 모델 코드 없음, GitHub `MiniMax-AI/MSA` 테스트 참조 ⚠️ | 단일 |
@@ -41,7 +42,7 @@
 | A3 | MoE: 잘게 나눈 expert + shared, aux-loss-free (sqrt-softplus, hash 라우팅) | DeepSeek-V4, GLM-5.3 | transformers `deepseek_v4`, `glm_moe_dsa` |
 | A4 | K = V 단일 head + 시퀀스 방향 KV 압축 (sliding / CSA 4→1 겹침 + indexer / HCA 128→1), q·출력 저랭크 | DeepSeek-V4 | transformers `deepseek_v4` |
 | A5 | sparse: DSA indexer(층 간 공유) / 블록 top-k | GLM-5.3 / MiniMax-M3 | `glm_moe_dsa` / GitHub `MiniMax-AI/MSA` |
-| A6 | Gated DeltaNet + Gated Attn / KDA + gated MLA | Qwen3.6·3.8-27B / Kimi-K3 | `qwen3_5` / HF `modeling_kimi_linear.py` |
+| A6 | Gated DeltaNet + Gated Attn (a: dense, c: + MoE 플래그십) / KDA + gated MLA (b) | Qwen3.6·3.8-27B, Qwen3.8-2.4T / Kimi-K3 | `qwen3_5`, `qwen3_5_moe` / HF `modeling_kimi_linear.py` |
 | A7 | Residual → HC → mHC / Attention Residuals | DeepSeek-V4, Qwen3.8-Flash-Next / Kimi-K3 | `deepseek_v4`, `qwen4_exp` / `modeling_kimi_k3.py` |
 | A8 | MTP, Engram, CSA2 (층마다 Full/Reindex/Reuse로 KV·indexer 공유) | DeepSeek-V4.1 | HF `inference/model.py`, `engram.py` |
 
@@ -83,7 +84,7 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
 2. 기준선 A0 GPT-2 · A1 Llama · B0 DiT 구현 ✅ → 첫 실험 `01_modadd`, `02_fashion_dit` ✅
    - `01_modadd` 100k-step 긴 학습: 셀 오류 수정 후 재실행 필요
 3. 최신 블록 (진행 중)
-   - 구현 완료, Colab 검증 대기 (`notebooks/verify/` 모델별 노트북): A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA, A6a Qwen3.6, A6b Kimi-K3, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash
+   - 구현 완료, Colab 검증 대기 (`notebooks/verify/` 모델별 노트북): A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA, A6a Qwen3.6, A6b Kimi-K3, A6c Qwen3.8 플래그십 2.4T, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash
    - **다음 1:** 모델별 검증 노트북 실행 → FAIL 난 모델 수정
    - **다음 2:** MQAR 태스크 추가 (`miniarch/tasks`)
 4. 부품별 ablation 실험: A1 → A2 → DeepSeek-V4 스위치 (sliding만 → +CSA/HCA → +MoE → +mHC), Qwen3.6 선형:full 비율. 태스크 MQAR → 덧셈 → 미로

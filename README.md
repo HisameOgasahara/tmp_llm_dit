@@ -25,6 +25,7 @@
 | A5b | MiniMax-M3 MSA (블록 top-k, attention 층 단위) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A5b_minimax_msa.ipynb) |
 | A6a | Qwen3.6 하이브리드 | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A6a_qwen36.ipynb) |
 | A6b | Kimi-K3 (KDA + gated MLA + AttnRes) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A6b_kimi_k3.ipynb) |
+| A6c | Qwen3.8 플래그십 2.4T-A95B (하이브리드 + MoE) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A6c_qwen38_moe.ipynb) |
 | A7a | Qwen3.8-Flash-Next (HC, indexer, n-gram) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A7a_qwen38_flash_next.ipynb) |
 | A8 | DeepSeek-V4.1-Flash (CSA2, Engram) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A8_deepseek_v41.ipynb) |
 

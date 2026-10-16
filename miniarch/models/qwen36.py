@@ -1,6 +1,7 @@
 """A6a · Qwen3.6 하이브리드: Gated DeltaNet (선형 attention) 3 : Gated Attention 1.
 
 HF 원본: transformers/models/qwen3_5 (Qwen3.5 / 3.6 / 3.8-27B 가 이 구조를 쓴다).
+플래그십 Qwen3.8-2.4T-A95B (qwen3_5_moe) 는 같은 하이브리드에서 MLP 만 MoE 로 바뀐다 → n_experts > 0.
 파라미터 이름은 HF 와 같다.
 
 핵심 부품
@@ -11,6 +12,7 @@ HF 원본: transformers/models/qwen3_5 (Qwen3.5 / 3.6 / 3.8-27B 가 이 구조�
   softmax attention 과 달리 시퀀스 길이와 무관한 상태 크기 → 긴 문맥에 싸지만 기억 용량이 유한하다.
 - Gated Attention: 일반 softmax attention 출력에 head 별 sigmoid 게이트를 곱한다 (+ QK-norm, partial RoPE).
 - Zero-centered RMSNorm: weight 를 0 으로 두고 (1 + w) 를 곱한다.
+- MoE (플래그십): softmax 점수 → top-k → 고른 점수끼리 다시 정규화, + sigmoid 게이트를 곱한 shared expert.
 """
 from __future__ import annotations
 
@@ -44,8 +46,14 @@ class Qwen36Config:
     conv_kernel: int = 4
     delta_mode: str = "chunk"                 # "chunk"(학습용, 빠름) / "recurrent"(토큰별, 해석용)
     chunk_size: int = 64
+    # MLP / MoE
+    d_ff: int = 704                           # dense MLP 폭 (n_experts = 0 일 때)
+    n_experts: int = 0                        # 0 = dense (3.6 / 3.8-27B), >0 = MoE (3.8-2.4T)
+    top_k: int = 8
+    moe_inter: int = 128                      # routed expert 폭
+    shared_inter: int = 128                   # shared expert 폭
+    use_shared_expert: bool = True            # ablation: shared expert 끄기
     # 공통
-    d_ff: int = 704
     rms_eps: float = 1e-6
     tie_embeddings: bool = True
 
@@ -248,14 +256,70 @@ class GatedAttention(nn.Module):
 # ---------------------------------------------------------------- 블록 / 모델
 
 class MLP(nn.Module):
-    def __init__(self, c: Qwen36Config):
+    def __init__(self, c: Qwen36Config, d_ff: int | None = None):
         super().__init__()
-        self.gate_proj = nn.Linear(c.d_model, c.d_ff, bias=False)
-        self.up_proj = nn.Linear(c.d_model, c.d_ff, bias=False)
-        self.down_proj = nn.Linear(c.d_ff, c.d_model, bias=False)
+        d_ff = d_ff or c.d_ff
+        self.gate_proj = nn.Linear(c.d_model, d_ff, bias=False)
+        self.up_proj = nn.Linear(c.d_model, d_ff, bias=False)
+        self.down_proj = nn.Linear(d_ff, c.d_model, bias=False)
 
     def forward(self, x):
         return self.down_proj(F.silu(self.gate_proj(x)) * self.up_proj(x))
+
+
+class Router(nn.Module):
+    """softmax 점수 → top-k → 고른 점수끼리 합 1 로 재정규화 (HF Qwen3_5MoeTopKRouter)."""
+    def __init__(self, c: Qwen36Config):
+        super().__init__()
+        self.top_k = c.top_k
+        self.weight = nn.Parameter(torch.zeros(c.n_experts, c.d_model))
+        self.route_probe = nn.Identity()   # hook 지점: 선택된 expert [N, k]
+
+    def forward(self, x):                  # x [N, D]
+        probs = F.linear(x, self.weight).float().softmax(-1)
+        w, idx = probs.topk(self.top_k, dim=-1)
+        w = w / w.sum(-1, keepdim=True)
+        self.route_probe(idx)
+        return w.to(x.dtype), idx
+
+
+class Experts(nn.Module):
+    """expert 가중치를 3D 텐서로 보관 (HF 와 같은 이름·모양: gate_up_proj [E, 2I, D], down_proj [E, D, I])."""
+    def __init__(self, c: Qwen36Config):
+        super().__init__()
+        self.n = c.n_experts
+        self.gate_up_proj = nn.Parameter(torch.empty(c.n_experts, 2 * c.moe_inter, c.d_model))
+        self.down_proj = nn.Parameter(torch.empty(c.n_experts, c.d_model, c.moe_inter))
+        nn.init.normal_(self.gate_up_proj, std=0.02)
+        nn.init.normal_(self.down_proj, std=0.02)
+
+    def forward(self, x, idx, w):          # x [N, D], idx/w [N, k]
+        out = torch.zeros_like(x)
+        for e in idx.unique().tolist():    # 원본과 같은 순서(expert 번호 순)로 누적
+            tok, pos = torch.where(idx == e)
+            gate, up = F.linear(x[tok], self.gate_up_proj[e]).chunk(2, dim=-1)
+            y = F.linear(F.silu(gate) * up, self.down_proj[e]) * w[tok, pos, None]
+            out.index_add_(0, tok, y.to(out.dtype))
+        return out
+
+
+class SparseMoE(nn.Module):
+    def __init__(self, c: Qwen36Config):
+        super().__init__()
+        self.c = c
+        self.gate = Router(c)
+        self.experts = Experts(c)
+        self.shared_expert = MLP(c, c.shared_inter)
+        self.shared_expert_gate = nn.Linear(c.d_model, 1, bias=False)
+
+    def forward(self, x):
+        B, T, D = x.shape
+        x = x.reshape(-1, D)
+        w, idx = self.gate(x)
+        out = self.experts(x, idx, w)
+        if self.c.use_shared_expert:
+            out = out + torch.sigmoid(self.shared_expert_gate(x)) * self.shared_expert(x)
+        return out.view(B, T, D)
 
 
 class Layer(nn.Module):
@@ -268,7 +332,7 @@ class Layer(nn.Module):
             self.self_attn = GatedAttention(c)
         self.input_layernorm = ZeroCenteredRMSNorm(c.d_model, c.rms_eps)
         self.post_attention_layernorm = ZeroCenteredRMSNorm(c.d_model, c.rms_eps)
-        self.mlp = MLP(c)
+        self.mlp = SparseMoE(c) if c.n_experts else MLP(c)
 
     def forward(self, x, cos, sin):
         h = self.input_layernorm(x)
@@ -318,11 +382,16 @@ def config_from_hf(c) -> Qwen36Config:
         partial_rotary=rp.get("partial_rotary_factor", 0.25), rope_theta=rp.get("rope_theta", 10000.0),
         lin_k_heads=c.linear_num_key_heads, lin_v_heads=c.linear_num_value_heads,
         lin_k_dim=c.linear_key_head_dim, lin_v_dim=c.linear_value_head_dim, conv_kernel=c.linear_conv_kernel_dim,
-        d_ff=c.intermediate_size, rms_eps=c.rms_norm_eps)
+        d_ff=getattr(c, "intermediate_size", None) or 704, rms_eps=c.rms_norm_eps,
+        n_experts=getattr(c, "num_experts", 0), top_k=getattr(c, "num_experts_per_tok", 8),
+        moe_inter=getattr(c, "moe_intermediate_size", 128),
+        shared_inter=getattr(c, "shared_expert_intermediate_size", 128))
 
 
 def verify_pair(ref) -> dict:
-    """ref = transformers Qwen3_5TextModel (이름이 같아 name_map 불필요)"""
+    """ref = transformers Qwen3_5TextModel / Qwen3_5MoeTextModel (이름이 같아 name_map 불필요)"""
     mine = Qwen36(config_from_hf(ref.config))
-    return dict(mine=mine, name_map=None,
-                hook_pairs=[(f"layers.{i}", f"layers.{i}") for i in range(ref.config.num_hidden_layers)])
+    pairs = []
+    for i in range(ref.config.num_hidden_layers):
+        pairs += [(f"layers.{i}.mlp", f"layers.{i}.mlp"), (f"layers.{i}", f"layers.{i}")]
+    return dict(mine=mine, name_map=None, hook_pairs=pairs)
