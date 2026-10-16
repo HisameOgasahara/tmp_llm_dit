@@ -1,0 +1,88 @@
+check,ok,value
+MQAR 키는 앞 절반·값은 뒤 절반,True,0.0
+MQAR 문맥 안 키 중복 없음,True,0.0
+MQAR 정답 = 짝지어진 값,True,0.0
+MQAR 손실은 질문 위치에만,True,0.0
+MQAR 정답 = 다음 칸 입력 (shift 일치),True,0.0
+MQAR 거리 표시 일치,True,0.0
+"modadd 학습/평가 (a,b) 겹침 없음",True,0.0
+MQAR 평가 시퀀스가 학습 스트림에 없음,True,0.0
+손실 = 표시된 위치만의 평균 CE,True,4.76837158203125e-07
+손실: 정답을 바꾸면 손실이 바뀜,True,0.002269268035888672
+정답 누수 없음 (질문 위치 출력이 뒤 칸에 무관),True,0.0
+lr warmup 선형 증가,True,0.1
+lr cosine 단조 감소 → min_lr,True,0.1
+weight decay 는 2차원 이상만 (norm·bias 제외),True,5.0
+평가가 가중치를 안 바꿈,True,0.0
+평가가 학습 배치 RNG 를 안 건드림,True,0.0
+평가 후 train 모드 복원,True,0.0
+평가는 결정적 (두 번 같은 값),True,0.0
+Llama: 같은 seed → 같은 손실 곡선,True,0.0
+Llama: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+Llama: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+"기록: 필수 항목 (loss, grad_norm, lr, eval)",True,0.0
+기록: attention MI 지표 자동 수집,True,0.0
+기록: TensorBoard 이벤트 파일 생성,True,1.0
+기록: 기울기 norm 유한,True,0.9397323131561279
+A10_gemma4: 손실 유한,True,4.364975452423096
+A10_gemma4: 손실 감소,True,0.9028452888606417
+A10_gemma4: 같은 seed → 같은 손실 곡선,True,0.0
+A10_gemma4: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A10_gemma4: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+A2_mimo_v26: 손실 유한,True,4.194246292114258
+A2_mimo_v26: 손실 감소,True,0.8765075110236417
+A2_mimo_v26: 라우터 bias 업데이트 동작 (3개),True,1.3332310914993286
+A2_mimo_v26: 같은 seed → 같은 손실 곡선,True,0.0
+A2_mimo_v26: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A2_mimo_v26: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+A4_deepseek_v4: 손실 유한,True,4.2111735343933105
+A4_deepseek_v4: 손실 감소,True,0.8812358756329273
+A4_deepseek_v4: 라우터 bias 업데이트 동작 (3개),True,0.6282204389572144
+A4_deepseek_v4: 같은 seed → 같은 손실 곡선,True,0.0
+A4_deepseek_v4: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A4_deepseek_v4: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+A5a_glm53: 손실 유한,True,4.165017604827881
+A5a_glm53: 손실 감소,True,0.8802722687188775
+A5a_glm53: 라우터 bias 업데이트 동작 (3개),True,1.087271809577942
+A5a_glm53: 같은 seed → 같은 손실 곡선,True,0.0
+A5a_glm53: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A5a_glm53: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+A6a_qwen36: 손실 유한,True,4.289769649505615
+A6a_qwen36: 손실 감소,True,0.8816167074337143
+A6a_qwen36: 같은 seed → 같은 손실 곡선,True,0.0
+A6a_qwen36: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A6a_qwen36: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+A6b_kimi_k3: 손실 유한,True,4.425824165344238
+A6b_kimi_k3: 손실 감소,True,0.9070629550706246
+A6b_kimi_k3: 라우터 bias 업데이트 동작 (3개),True,1.1047694683074951
+A6b_kimi_k3: 같은 seed → 같은 손실 곡선,True,0.0
+A6b_kimi_k3: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A6b_kimi_k3: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+A6c_qwen38_moe: 손실 유한,True,4.394778251647949
+A6c_qwen38_moe: 손실 감소,True,0.9020606660427504
+A6c_qwen38_moe: 같은 seed → 같은 손실 곡선,True,0.0
+A6c_qwen38_moe: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A6c_qwen38_moe: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+A7a_qwen38_flash_next: 손실 유한,True,4.2393341064453125
+A7a_qwen38_flash_next: 손실 감소,True,0.8793598798523515
+A7a_qwen38_flash_next: 같은 seed → 같은 손실 곡선,True,0.0
+A7a_qwen38_flash_next: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A7a_qwen38_flash_next: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+A8_deepseek_v41: 손실 유한,True,4.193382740020752
+A8_deepseek_v41: 손실 감소,True,0.8672895704963628
+A8_deepseek_v41: 라우터 bias 업데이트 동작 (7개),True,1.1310229301452637
+A8_deepseek_v41: 같은 seed → 같은 손실 곡선,True,0.0
+A8_deepseek_v41: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A8_deepseek_v41: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+A9_step5: 손실 유한,True,4.258650779724121
+A9_step5: 손실 감소,True,0.8585301883442454
+A9_step5: 라우터 bias 업데이트 동작 (3개),True,0.7870469093322754
+A9_step5: 같은 seed → 같은 손실 곡선,True,0.0
+A9_step5: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+A9_step5: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+B0_dit: 손실 유한,True,1.4281448125839233
+B0_dit: 손실 감소,True,0.9543671520097825
+B0_dit: 같은 seed → 같은 손실 곡선,True,0.0
+B0_dit: 체크포인트 재개 == 한 번에 학습 (손실),True,0.0
+B0_dit: 체크포인트 재개 == 한 번에 학습 (가중치),True,0.0
+Llama 가 MQAR(짝 8) 학습 ≥ 0.9,False,0.1875

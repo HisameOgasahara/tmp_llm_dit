@@ -197,14 +197,25 @@ def test_logging(device: str, tmp: str) -> Result:
             ("기록: 기울기 norm 유한", all(torch.isfinite(torch.tensor(gn))), max(gn) if gn else 0.0)]
 
 
-def test_learns_mqar(device: str, tmp: str, steps: int = 1500, threshold: float = 0.9) -> Result:
-    """알려진 결과: attention 모델은 MQAR(짝 8개)을 거의 완벽히 푼다 (Zoology). 학습 루프 전체가 맞물리는지 확인."""
+def test_learns_mqar(device: str, tmp: str, max_steps: int = 10000, chunk: int = 500, threshold: float = 0.9) -> Result:
+    """알려진 결과: attention 모델은 MQAR(짝 8개)을 거의 완벽히 푼다 (Zoology). 학습 루프 전체가 맞물리는지 확인.
+
+    induction 회로가 생기기 전까지 정확도가 한참 정체하다가 오르므로, 500 step 마다 평가해서 threshold 에 닿으면 멈춘다
+    (최대 max_steps, Zoology 는 수만 step 학습). 정확도 추이를 함께 출력한다.
+    """
     task = MQAR(MQARConfig(vocab_size=128, n_pairs=8))
-    tr = _run(lambda: tiny_llama(seed=0), task, f"{tmp}/learn", device, steps,
-              steps=steps, batch_size=64, lr=3e-3, warmup=100, eval_every=250, eval_batches=4, log_every=50,
-              mi_every=500, weight_decay=0.1)
-    acc = tr.evaluate()["eval/acc"]
-    return [(f"Llama 가 MQAR(짝 8) 학습 ≥ {threshold}", acc >= threshold, acc)]
+    tr = _run(lambda: tiny_llama(seed=0), task, f"{tmp}/learn", device, 0,
+              steps=max_steps, batch_size=64, lr=1e-3, warmup=200, eval_every=chunk, eval_batches=4, log_every=100,
+              mi_every=chunk, weight_decay=0.1)
+    curve = []
+    while tr.step < max_steps:
+        tr.train(chunk, progress=False)
+        acc = tr.evaluate()["eval/acc"]
+        curve.append((tr.step, round(acc, 3)))
+        if acc >= threshold:
+            break
+    print("  step·정확도:", curve)
+    return [(f"Llama 가 MQAR(짝 8) 학습 ≥ {threshold} ({tr.step} step)", acc >= threshold, acc)]
 
 
 def model_smoke(name: str, model_fn, device: str, tmp: str, steps: int = 30) -> Result:
