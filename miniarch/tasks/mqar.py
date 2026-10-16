@@ -4,7 +4,9 @@
     정답:  qi 위치에서 다음 토큰 ai (= qi 와 짝지어진 값)
 
 - 키는 어휘 앞 절반에서 중복 없이, 값은 뒤 절반에서 뽑는다 → 키와 값이 섞이지 않는다.
-- 질문 qi 는 앞에 나온 키 중에서 중복 없이 고른다 (순서는 섞음).
+- 질문 qi 는 앞에 나온 키 중에서 **중복을 허용해** 고른다. 중복 없이 모든 키를 한 번씩 물으면
+  "아직 답하지 않은 값 중 하나"를 고르는 소거법으로 기억 없이 정확도 (1/8+…+1/1)/8 ≈ 0.34 를 얻을 수 있고,
+  실제로 작은 Llama 가 여기에 갇혀 연관 기억을 배우지 않았다 (2026-10-16). 중복 허용이면 소거법이 통하지 않는다.
 - ai 는 입력에도 있지만 qi 다음 칸이라 causal 모델은 볼 수 없다 (정답 누수는 causal mask 가 막는다).
 - 거리 = 질문 위치 − 그 키의 위치. 멀수록 어렵고, sliding window·선형 attention 의 한계가 여기서 드러난다.
 """
@@ -23,6 +25,7 @@ class MQARConfig:
     n_pairs: int = 8
     n_queries: int | None = None          # None = n_pairs
     distance_edges: tuple = (8, 16, 32)   # 거리 구간 경계 (지표: acc_d<8, acc_d8-16, ...)
+    query_replacement: bool = True        # True: 질문 키 중복 허용 (소거법 차단). False: 모든 키를 한 번씩
 
 
 class MQAR(LMTask):
@@ -32,7 +35,7 @@ class MQAR(LMTask):
         self.cfg = cfg
         self.n_q = cfg.n_queries or cfg.n_pairs
         half = cfg.vocab_size // 2
-        assert cfg.n_pairs <= half and self.n_q <= cfg.n_pairs
+        assert cfg.n_pairs <= half and (cfg.query_replacement or self.n_q <= cfg.n_pairs)
         self.half = half
 
     @property
@@ -43,7 +46,10 @@ class MQAR(LMTask):
         c, N, M, H = self.cfg, self.cfg.n_pairs, self.n_q, self.half
         keys = torch.argsort(torch.rand(batch_size, H, generator=gen), dim=1)[:, :N]            # [B, N] 중복 없음
         vals = torch.randint(H, c.vocab_size, (batch_size, N), generator=gen)                   # [B, N]
-        qi = torch.argsort(torch.rand(batch_size, N, generator=gen), dim=1)[:, :M]               # 질문할 짝 번호
+        if c.query_replacement:
+            qi = torch.randint(0, N, (batch_size, M), generator=gen)                             # 질문할 짝 번호 (중복 허용)
+        else:
+            qi = torch.argsort(torch.rand(batch_size, N, generator=gen), dim=1)[:, :M]           # 중복 없이
         q, a = keys.gather(1, qi), vals.gather(1, qi)
         ctx = torch.stack([keys, vals], 2).reshape(batch_size, 2 * N)
         qa = torch.stack([q, a], 2).reshape(batch_size, 2 * M)

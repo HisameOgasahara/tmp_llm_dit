@@ -197,14 +197,15 @@ def test_logging(device: str, tmp: str) -> Result:
             ("기록: 기울기 norm 유한", all(torch.isfinite(torch.tensor(gn))), max(gn) if gn else 0.0)]
 
 
-def test_learns_mqar(device: str, tmp: str, max_steps: int = 10000, chunk: int = 500, threshold: float = 0.9) -> Result:
+def test_learns_mqar(device: str, tmp: str, max_steps: int = 20000, chunk: int = 500, threshold: float = 0.9) -> Result:
     """알려진 결과: attention 모델은 MQAR(짝 8개)을 거의 완벽히 푼다 (Zoology). 학습 루프 전체가 맞물리는지 확인.
 
-    induction 회로가 생기기 전까지 정확도가 한참 정체하다가 오르므로, 500 step 마다 평가해서 threshold 에 닿으면 멈춘다
-    (최대 max_steps, Zoology 는 수만 step 학습). 정확도 추이를 함께 출력한다.
+    induction 회로(앞 칸 head + 같은 키 찾기 head)가 생기기 전까지 정확도가 정체하다가 오르므로 500 step 마다 평가해서
+    threshold 에 닿으면 멈춘다 (최대 max_steps). 기준선: 우연 1/64 ≈ 0.016, 문맥 값 중 아무거나 복사 1/8 = 0.125.
     """
     task = MQAR(MQARConfig(vocab_size=128, n_pairs=8))
-    tr = _run(lambda: tiny_llama(seed=0), task, f"{tmp}/learn", device, 0,
+    model_fn = lambda: Llama(LlamaConfig(vocab_size=128, d_model=128, n_layer=2, n_head=4, n_kv_head=4, d_ff=256))
+    tr = _run(model_fn, task, f"{tmp}/learn", device, 0,
               steps=max_steps, batch_size=64, lr=1e-3, warmup=200, eval_every=chunk, eval_batches=4, log_every=100,
               mi_every=chunk, weight_decay=0.1)
     curve = []
