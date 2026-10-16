@@ -1,0 +1,4 @@
+check,ok,max_abs
+원본 동치 (Qwen3.6/3.8-27B),True,
+내 구현 causal leak (prefix<24),True,0.0
+delta rule recurrent vs chunk(32),True,1.043081283569336e-07

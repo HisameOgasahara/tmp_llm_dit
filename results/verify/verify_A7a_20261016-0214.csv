@@ -1,0 +1,10 @@
+check,ok,max_abs
+원본 동치 (Qwen3.8-Flash-Next),True,
+내 구현 causal leak (prefix<24),True,1.1920928955078125e-07
+indexer 선택 개수 / 인과성,True,
+"attention: 선택 밖 확률 0, 행합 1",True,1.1920928955078125e-07
+PLE n-gram EOS 경계,True,0.0
+use_hc=False 동작 + causal,True,1.1920928955078125e-07
+use_indexer=False 동작 + causal,True,2.384185791015625e-07
+use_ple=False 동작 + causal,True,3.3527612686157227e-07
+use_moe=False 동작 + causal,True,0.0

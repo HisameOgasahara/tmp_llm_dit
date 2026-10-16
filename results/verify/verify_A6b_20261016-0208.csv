@@ -1,0 +1,20 @@
+check,ok,max_abs
+원본 동치 (Kimi-K3),True,
+내 구현 causal leak (prefix<24),True,2.384185791015625e-07
+KDA recurrent vs chunk(32),True,5.066394805908203e-07
+KDA recurrent vs fla naive (원본 builder),True,2.9802322387695312e-08
+모델 chunk vs recurrent,True,3.6954879760742188e-06
+layers.0.mlp_res_probe 확률 합,True,5.960464477539063e-08
+layers.1.self_attention_res_probe 확률 합,True,5.960464477539063e-08
+layers.1.mlp_res_probe 확률 합,True,5.960464477539063e-08
+layers.2.self_attention_res_probe 확률 합,True,5.960464477539063e-08
+layers.2.mlp_res_probe 확률 합,True,1.1920928955078125e-07
+layers.3.self_attn.attn_probs 확률 합,True,1.1920928955078125e-07
+layers.3.self_attention_res_probe 확률 합,True,1.1920928955078125e-07
+layers.3.mlp_res_probe 확률 합,True,1.1920928955078125e-07
+output_res_probe 확률 합,True,1.1920928955078125e-07
+ablation use_attn_res=False forward,True,0.0
+ablation use_kda=False forward,True,0.0
+ablation use_moe=False forward,True,0.0
+ablation use_latent_moe=False forward,True,0.0
+ablation use_output_gate=False forward,True,0.0
