@@ -215,7 +215,7 @@ nb.code("""
 for name, c in (LONG_RUNS.items() if RUN_LONG else []):
     seed_all(0)
     m = modadd.build_model(c["kind"], P, D_MODEL, N_HEAD, N_LAYER, use_ln=c["ln"], tie=c["tie"]).to(dev)
-    print(f"\n▶ {name}")
+    print(f"\\n▶ {name}")
     hists[name] = modadd.train(m, datasets[c["frac"]], steps=STEPS_LONG, lr=c["lr"], wd=c["wd"], log_every=500)
     models[name] = m
 summary = summarize()

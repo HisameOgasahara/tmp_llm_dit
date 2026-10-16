@@ -1,6 +1,8 @@
 """노트북 생성 공용 헬퍼. 노트북은 직접 편집하지 말고 tools/build_*.py 를 고쳐서 다시 생성한다."""
+import ast
 import json
 import os
+import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -27,6 +29,7 @@ class NB:
         self.md("## 0. 환경 준비")
         self.code(f"""
 import os
+import re
 REPO_DIR = "/content/tmp_llm_dit"
 if not os.path.exists(REPO_DIR):
     !git clone -q https://github.com/{REPO}.git {{REPO_DIR}}
@@ -54,6 +57,10 @@ print("torch", torch.__version__, "| GPU:", torch.cuda.get_device_name(0) if tor
         with open(full, "w", encoding="utf-8") as f:
             json.dump(nb, f, ensure_ascii=False, indent=1)
         json.load(open(full, encoding="utf-8"))  # 깨진 JSON 방지
+        for i, c in enumerate(self.cells):       # 셀 문법 오류 방지 (! / % 줄은 pass 로 바꿔 검사)
+            if c["cell_type"] == "code":
+                src = "\n".join(re.sub(r"^(\s*)[!%].*", r"\1pass", l) for l in c["source"].splitlines())
+                ast.parse(src, filename=f"{path} cell {i}")
         print("ok", path, len(cells), "cells")
 
 
