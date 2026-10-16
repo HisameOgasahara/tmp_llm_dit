@@ -34,7 +34,8 @@ def build(module_name):
     nb = NB()
     steps = ["환경 준비"] + (["원본 구조 (HF 헤더)"] if spec["HEADER"] else []) + \
             ["원본 모델 동작 확인", "내 구현 == 원본 (층별 출력 비교)"] + \
-            (["causal 누수"] if spec["CAUSAL"] else []) + (["단계 전용 자체 점검"] if spec["SELF_CHECKS"] else []) + \
+            (["causal 누수"] if spec["CAUSAL"] else []) + ["학습 동작 확인"] + \
+            (["단계 전용 자체 점검"] if spec["SELF_CHECKS"] else []) + \
             ["결과 저장"]
     nb.md(f"""
 # {stage} · {spec['TITLE']} 검증
@@ -131,6 +132,47 @@ V.set_deterministic(0)
 mine = importlib.import_module(S.CASE.mine_module).verify_pair(S.ref()[0])["mine"].to(dev).eval()
 r = V.causal_leak_test(lambda x: mine(x).last_hidden_state, vocab_size=V.cases.VOCAB, seq_len=48, device=dev, atol=1e-4)
 report("내 구현 " + r.name, r.ok, r.max_abs)
+""")
+
+    nb.md("""
+## 학습 동작 확인
+
+forward 가 원본과 같아도 학습이 되는지는 따로 확인해야 합니다.
+- **기울기 == 원본**: 같은 가중치·같은 손실로 원본과 내 구현을 backward 해서 파라미터 기울기를 비교합니다 (파라미터별 상대 오차 ≤ 1e-3).
+  원본이 추론 전용 코드(no_grad)면 건너뜁니다.
+- **배치 하나 외우기**: 고정 배치 하나로 300 step 학습해 손실이 처음의 20% 이하로 내려가는지 봅니다 (LM은 다음 토큰 CE, 그 외는 고정 목표 MSE).
+  NaN/inf 가 없어야 하고, 기울기를 한 번도 받지 못한 파라미터를 보여줍니다 (MoE 에서 안 뽑힌 expert 는 정상).
+""")
+    nb.code("""
+import importlib, traceback
+from miniarch.verify import training as TR
+mod = importlib.import_module(S.CASE.mine_module)
+V.set_deterministic(0)
+ref, inputs = S.ref()
+V.perturb_params(ref)
+pair = mod.verify_pair(ref)
+try:
+    g = TR.grad_equivalence(ref, pair, inputs, dev)
+    if g.note.startswith("원본 출력에 기울기가 없음"):
+        print("⏭️", g.note); report("기울기 == 원본 (원본 추론 전용 → 건너뜀)", True)
+    else:
+        print(f"비교한 파라미터 {g.compared}개, 최대 상대 오차 {g.max_rel:.2e} ({g.worst})", g.note)
+        if g.skipped_ref:
+            print("원본에서 기울기 없는 파라미터:", g.skipped_ref[:8])
+        report("기울기 == 원본", g.ok, g.max_rel)
+except Exception:
+    traceback.print_exc(limit=4); report("기울기 == 원본", False)
+""")
+    nb.code("""
+try:
+    o = TR.overfit_batch(pair["mine"], pair, inputs, dev)
+    print(f"{o.kind}: {o.loss_start:.4f} → {o.loss_end:.4f}  (유한={o.finite})")
+    print("  손실:", " ".join(f"{v:.3g}" for v in o.curve[::30]))
+    if o.no_grad_params:
+        print(f"  기울기를 못 받은 파라미터 {len(o.no_grad_params)}개:", o.no_grad_params[:8])
+    report("배치 하나 외우기 (" + o.kind + ")", o.ok, o.loss_end / max(o.loss_start, 1e-12))
+except Exception:
+    traceback.print_exc(limit=4); report("배치 하나 외우기", False)
 """)
 
     if spec["SELF_CHECKS"]:
