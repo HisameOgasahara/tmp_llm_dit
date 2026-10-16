@@ -6,6 +6,29 @@
 3. 모든 블록은 `00_check`의 원본 출력 비교를 통과해야 실험에 넣습니다.
 4. 기본 크기는 d_model 256, 4~8층, head 4~8개, 5~20M 파라미터입니다. T4 기준 태스크당 30분~2시간입니다.
 
+## 대상 모델 현황 (2026-10 기준, HF에서 직접 확인)
+
+### LLM
+| 모델 | 공개 | 핵심 구조 | 정답 코드 (T4에서 실행 가능?) | 크기 변형 |
+|---|---|---|---|---|
+| DeepSeek-V4.1-Flash | 2026-09 | V4 + Engram, 층 간 KV/indexer 공유, 비전, DSpark | HF `inference/model.py` (TileLang FP8 커널 → 커널만 PyTorch로 교체해야 함) | V4: Flash / Pro (+Base) |
+| DeepSeek-V4 | 2026-07~08 | sliding/CSA/HCA attention, Lightning Indexer, sink, mHC, sqrt-softplus MoE | transformers `deepseek_v4` ✅ | Flash(43층) / Pro(61층) |
+| Kimi-K3 | 2026-06 | KDA 3 : gated MLA 1, Attention Residuals, latent MoE | HF `modeling_kimi_k3.py`, `modeling_kimi_linear.py` ✅ | 단일 |
+| Qwen3.6 / 3.8-27B | 2026-08 | Gated DeltaNet 3 : Gated Attention 1, partial RoPE | transformers `qwen3_5` ✅ | 27B dense / 35B-A3B MoE / 2.4T |
+| Qwen3.8-Flash-Next | 2026-08 | 위 + HC, sparse indexer, n-gram 임베딩 | transformers `qwen4_exp` ✅ | – |
+| GLM-5.3 | 2026-08 | MLA + DSA (indexer 4층마다 공유) | transformers `glm_moe_dsa` ✅ | 일반 / Flash(구조 다름) |
+| MiniMax-M3 | 2026-06 | GQA + 블록 top-k sparse (MSA) | 모델 코드 없음, GitHub `MiniMax-AI/MSA` 테스트 참조 ⚠️ | 단일 |
+| MiMo-V2.6 | 2026-09 | SWA 7 : full 1, SWA 층 sink | HF `modeling_mimo_v2.py` ✅ | Flash / Pro |
+
+### 생성 (DiT) · 멀티모달
+| 모델 | 공개 | 핵심 구조 | 정답 코드 | 크기 변형 |
+|---|---|---|---|---|
+| Qwen-Image-2.1 | 2026-09 | Single-Stream DiT 32층, 생성+편집 통합, Qwen3-VL 인코더 | DiffSynth, ComfyUI `qwen_image21`, diffusers ✅ | Turbo 등 |
+| Krea-2 | 2026-06 | 12B DiT (HF 약관 동의 필요) | DiffSynth `krea2_dit.py`, ComfyUI `krea2`, diffusers ✅ | Raw / Turbo |
+| Anima | 2026-01 | Cosmos-Predict2-2B 기반 애니메 특화 | DiffSynth `anima_dit.py`, ComfyUI `anima` ✅ | 단일 |
+| MiniMax-H3 | 2026-07 | 비디오+오디오 3D DiT 50층 | DiffSynth `minimax_h3_dit.py` ✅ | 단일 |
+| Cosmos3 | 2026-03~07 | LLM + diffusion expert MoT, 행동 출력(VLA) | diffusers `transformer_cosmos3.py`, GitHub `nvidia/cosmos` ✅ | Edge / Nano / Super |
+
 ## 트랙 A · LLM 계보
 
 | 단계 | 바뀌는 부품 | 기준 모델 | 정답 코드 |
