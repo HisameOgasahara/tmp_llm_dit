@@ -87,9 +87,10 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
 1. Phase 0: 검증 도구 (`00_check`) ✅
 2. 기준선 A0 GPT-2 · A1 Llama · B0 DiT 구현 ✅ → 첫 실험 `01_modadd`, `02_fashion_dit` ✅
    - `01_modadd` 100k-step 긴 학습: 셀 오류 수정 후 재실행 필요
-3. 최신 LLM 블록 구현·검증 ✅ (2026-10-16, Colab T4, `results/verify/`)
-   - 원본 동치 + causal 누수 + 단계 전용 점검 전부 통과: A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA(attention 층 단위), A6a Qwen3.6, A6b Kimi-K3, A6c Qwen3.8 플래그십 2.4T, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash
-   - **진행 중:** A9 Step-5, A10 Gemma 4, B1~B4, C0~C2 구현·검증 (같은 방식)
+3. 최신 모델 구현·검증 ✅ (2026-10-16, Colab T4, `notebooks/verify/00_run_all` → `results/verify/run_20261016-0422/`)
+   - 18개 모델, 점검 328개 전부 통과. 원본 대비 최종 출력 오차 0 ~ 1e-5
+   - LLM: A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA(attention 층 단위), A6a Qwen3.6, A6b Kimi-K3, A6c Qwen3.8 플래그십 2.4T, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash, A9 Step-5-Preview, A10 Gemma 4
+   - DiT: B1 Qwen-Image, B2 Krea-2, B3 Anima, B4 MiniMax-H3 / 멀티모달: C0 Qwen3.8-27B 비전, C1 Cosmos3, C2 Qwen-Image-2.1
    - **다음:** MQAR 태스크 추가 (`miniarch/tasks`) → 4번 실험
 4. 부품별 ablation 실험: A1 → A2 → DeepSeek-V4 스위치 (sliding만 → +CSA/HCA → +MoE → +mHC), Qwen3.6 선형:full 비율. 태스크 MQAR → 덧셈 → 미로
-5. B1 ~ B4, C0 ~ C2 (모델별 검증 노트북 방식 그대로)
+5. DiT·멀티모달 실험: 편집, Moving-MNIST, 이미지 질의응답, 미로 행동

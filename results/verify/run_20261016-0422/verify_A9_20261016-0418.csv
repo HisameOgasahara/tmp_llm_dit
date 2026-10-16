@@ -1,0 +1,28 @@
+check,ok,max_abs
+원본 동치 (Step-5-Preview),True,
+내 구현 causal leak (prefix<24),True,0.0
+region 선택 대체 == 정의 (동점 포함),True,0.0
+sparse_attention_prefill 대체 == 정의,True,4.76837158203125e-07
+region 선택: 원본 Triton == 대체,True,0.0
+sparse attention: 원본 Triton == 대체 (tf32 허용),True,4.76837158203125e-07
+layer 0 window 밖·미래 확률 0,True,0.0
+layer 0 확률 행 합 = 1,True,1.1920928955078125e-07
+"layer 1 고른 region 수 = min(top-k, p//R)",True,0.0
+layer 1 확률 행 합 = 1,True,1.1920928955078125e-07
+layer 2 window 밖·미래 확률 0,True,0.0
+layer 2 확률 행 합 = 1,True,1.1920928955078125e-07
+layer 3 window 밖·미래 확률 0,True,0.0
+layer 3 확률 행 합 = 1,True,2.384185791015625e-07
+"layer 4 고른 region 수 = min(top-k, p//R)",True,0.0
+layer 4 확률 행 합 = 1,True,2.384185791015625e-07
+요청 0 (길이 45) 단독 == 묶음,True,8.344650268554688e-07
+요청 1 (길이 38) 단독 == 묶음,True,7.152557373046875e-07
+use_sparse=False forward,True,0.0
+use_sliding=False forward,True,0.0
+use_attn_gate=False forward,True,0.0
+use_partial_rope=False forward,True,0.0
+use_rope_scaling=False forward,True,0.0
+use_moe=False forward,True,0.0
+use_shared_expert=False forward,True,0.0
+use_router_bias=False forward,True,0.0
+use_swiglu_limit=False forward,True,0.0

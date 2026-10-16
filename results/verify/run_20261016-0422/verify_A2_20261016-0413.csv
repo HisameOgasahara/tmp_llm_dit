@@ -1,0 +1,15 @@
+check,ok,max_abs
+원본 동치 (MiMo-V2.6-Flash/Pro),True,
+내 구현 causal leak (prefix<24),True,3.5762786865234375e-07
+layer 0 확률 합(+sink),True,1.1920928955078125e-07
+layer 0 마스크 밖 확률 0,True,0.0
+layer 1 확률 합(+sink),True,1.1920928955078125e-07
+layer 1 마스크 밖 확률 0,True,0.0
+layer 2 확률 합(+sink),True,1.1920928955078125e-07
+layer 2 마스크 밖 확률 0,True,0.0
+layer 3 확률 합(+sink),True,1.1920928955078125e-07
+layer 3 마스크 밖 확률 0,True,0.0
+layers.1.mlp.gate.route_probe 그룹 수 <= 2,True,2.0
+layers.2.mlp.gate.route_probe 그룹 수 <= 2,True,2.0
+layers.3.mlp.gate.route_probe 그룹 수 <= 2,True,2.0
+split q/k/v 배치 == 원본,True,0.0

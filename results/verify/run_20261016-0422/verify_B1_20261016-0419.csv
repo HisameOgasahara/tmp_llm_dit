@@ -1,0 +1,22 @@
+check,ok,max_abs
+원본 동치 (Qwen-Image (Edit-2511)),True,
+원본 동치 (t2i),True,
+원본 동치 (layered),True,
+transformer_blocks.0.attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+transformer_blocks.0.attn.attn_probs padding key 확률 = 0,True,0.0
+transformer_blocks.1.attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+transformer_blocks.1.attn.attn_probs padding key 확률 = 0,True,0.0
+padding 내용 바꿔도 출력 같음,True,0.0
+끝 padding 추가해도 출력 같음,True,2.384185791015625e-07
+텍스트 전부 mask → 텍스트 내용 무관,True,0.0
+텍스트 전부 mask: 원본 == 내 구현,True,2.384185791015625e-07
+조건/무조건 출력이 다름,True,0.04924309253692627
+transformer_blocks.0.img_mod_probe 참조 이미지 = t=0 modulation,True,0.0
+transformer_blocks.1.img_mod_probe 참조 이미지 = t=0 modulation,True,0.0
+timestep 바꾸면 출력이 바뀜,True,0.13493239879608154
+use_qk_norm=False forward (출력 변화),True,0.02137809991836548
+use_rope=False forward (출력 변화),True,0.017819881439208984
+center_rope=False forward (출력 변화),True,0.011094212532043457
+use_text_mask=False forward (출력 변화),True,0.011678755283355713
+joint_attention=False forward (출력 변화),True,0.0208280086517334
+use_txt_norm=False forward (출력 변화),True,0.0004604160785675049

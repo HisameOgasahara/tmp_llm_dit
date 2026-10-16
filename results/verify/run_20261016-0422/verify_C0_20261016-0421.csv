@@ -1,0 +1,13 @@
+check,ok,max_abs
+원본 동치 (Qwen3.8-27B),True,
+M-RoPE 3축 위치 == get_rope_index,True,0.0
+rope delta 일치,True,0.0
+M-RoPE cos/sin (interleaved) 일치,True,0.0
+VLM state_dict 키 일치,True,0.0
+미니 VLM == Qwen3_5Model,True,0.0
+M-RoPE 끄면 (1D 위치) 출력이 바뀜,True,0.41306009888648987
+다른 프레임/이미지 출력 불변,True,0.0
+바꾼 프레임 출력은 변함,True,1.3324322700500488
+ablation {'use_rope': False} → 출력 변화,True,0.023432254791259766
+ablation {'use_abs_pos': False} → 출력 변화,True,0.15442895889282227
+ablation {'attn_scope': 'clip'} → 출력 변화,True,0.10216089338064194

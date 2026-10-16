@@ -1,0 +1,22 @@
+check,ok,max_abs
+원본 동치 (MiniMax-H3),True,
+token_refiner.blocks.0.attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+token_refiner.blocks.1.attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+blocks.0.attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+blocks.0.attn.attn_probs 실제 ↔ pad 확률 = 0,True,0.0
+blocks.1.attn.attn_probs 행 합 = 1,True,2.384185791015625e-07
+blocks.1.attn.attn_probs 실제 ↔ pad 확률 = 0,True,0.0
+"변조 벡터 수 = (timestep, modality) 쌍 수",True,0.0
+padding 64 vs 128 원본 출력 동일,True,0.0
+t2va 경로 내 구현 == 원본,True,2.384185791015625e-07
+빈 text 경로 내 구현 == 원본,True,1.1920928955078125e-07
+negative prompt(길이 3) 내 구현 == 원본,True,1.7881393432617188e-07
+refiner: text 순서 equivariant,True,4.76837158203125e-07
+본 블록: text 순서가 video 출력을 바꿈 (RoPE),True,0.007621705532073975
+audio timestep만 바꿔도 video 출력이 바뀜,True,0.00037044286727905273
+video timestep 민감도,True,0.00795656442642212
+use_rope=False forward (유한·출력 변화),True,0.02991199493408203
+use_qk_norm=False forward (유한·출력 변화),True,0.033719420433044434
+use_token_refiner=False forward (유한·출력 변화),True,0.016789495944976807
+modality_adaln=False forward (유한·출력 변화),True,0.08608114719390869
+use_gate=False forward (유한·출력 변화),True,0.8458428382873535

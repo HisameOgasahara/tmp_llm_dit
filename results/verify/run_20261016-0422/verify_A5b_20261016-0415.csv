@@ -1,0 +1,12 @@
+check,ok,max_abs
+원본 동치 (MiniMax-M3),True,
+내 LM causal leak (prefix<400),True,0.0
+topk 16 (블록 4개) vs dense,True,0.0
+topk 2 는 dense 와 달라야 함,True,0.13229472935199738
+"고른 블록 수 = min(topk, 질의 블록+1)",True,
+init 블록 항상 포함,True,
+local 블록 항상 포함,True,
+고른 블록 밖 확률 = 0,True,0.0
+attention 행 합 = 1,True,2.384185791015625e-07
+KL ≥ 0 이고 유한,True,0.7005499005317688
+KL 기울기는 index 가지에만,True,0.0

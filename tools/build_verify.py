@@ -192,6 +192,11 @@ books = sorted(p for p in glob.glob("notebooks/verify/*.ipynb") if not os.path.b
 if SELECT:
     books = [p for p in books if os.path.basename(p).split("_")[0] in SELECT]
 os.makedirs("results/executed", exist_ok=True)
+try:   # 자식 프로세스에서는 Colab 보안 비밀을 못 읽으므로 여기서 환경변수로 넘김 (gated 모델 헤더용)
+    from google.colab import userdata
+    os.environ["HF_TOKEN"] = userdata.get("HF_TOKEN")
+except Exception:
+    pass
 env = dict(os.environ, MINIARCH_SKIP_PIP="1")
 runs = []
 for p in books:

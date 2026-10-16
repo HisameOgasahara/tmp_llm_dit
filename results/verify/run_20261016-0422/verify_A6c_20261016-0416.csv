@@ -1,0 +1,8 @@
+check,ok,max_abs
+원본 동치 (Qwen3.8-2.4T-A95B),True,
+내 구현 causal leak (prefix<24),True,0.0
+layers.0.mlp.gate.route_probe top-k 서로 다름,True,0.0
+layers.1.mlp.gate.route_probe top-k 서로 다름,True,0.0
+layers.2.mlp.gate.route_probe top-k 서로 다름,True,0.0
+layers.3.mlp.gate.route_probe top-k 서로 다름,True,0.0
+shared expert 끄면 출력이 바뀜,True,0.49863600730895996

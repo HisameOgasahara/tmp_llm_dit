@@ -1,0 +1,7 @@
+check,ok,max_abs
+원본 동치 (DeepSeek-V4-Flash),True,
+내 구현 causal leak (prefix<24),True,0.0
+layer 0 확률 합,True,1.1920928955078125e-07
+layer 1 확률 합,True,1.7881393432617188e-07
+layer 2 확률 합,True,2.384185791015625e-07
+layer 3 확률 합,True,1.1920928955078125e-07

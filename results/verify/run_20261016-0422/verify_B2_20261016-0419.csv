@@ -1,0 +1,22 @@
+check,ok,max_abs
+원본 동치 (Krea-2),True,
+text_fusion.layerwise_blocks.0.attn.attn_probs 행 합,True,1.1920928955078125e-07
+text_fusion.layerwise_blocks.1.attn.attn_probs 행 합,True,1.1920928955078125e-07
+text_fusion.refiner_blocks.0.attn.attn_probs 행 합,True,1.1920928955078125e-07
+text_fusion.refiner_blocks.0.attn.attn_probs padding key 확률 0,True,0.0
+text_fusion.refiner_blocks.1.attn.attn_probs 행 합,True,1.1920928955078125e-07
+text_fusion.refiner_blocks.1.attn.attn_probs padding key 확률 0,True,0.0
+transformer_blocks.0.attn.attn_probs 행 합,True,1.1920928955078125e-07
+transformer_blocks.0.attn.attn_probs padding key 확률 0,True,0.0
+transformer_blocks.1.attn.attn_probs 행 합,True,1.7881393432617188e-07
+transformer_blocks.1.attn.attn_probs padding key 확률 0,True,0.0
+padding 토큰 추가해도 출력 동일,True,2.384185791015625e-07
+텍스트 순서 섞어도 출력 동일,True,1.1920928955078125e-07
+블록 간 modulation 차이 = 표 차이 (공유 temb),True,2.9802322387695312e-08
+timestep 바꾸면 출력이 바뀜,True,0.5382778644561768
+빈 텍스트(neg) ≠ cond,True,0.028381139039993286
+use_rope=False 면 출력이 바뀜,True,0.019070446491241455
+use_attn_gate=False 면 출력이 바뀜,True,0.05024011433124542
+use_block_table=False 면 출력이 바뀜,True,0.09158381819725037
+use_layerwise_fusion=False 면 출력이 바뀜,True,0.004410088062286377
+use_qk_norm=False 면 출력이 바뀜,True,0.02851375937461853

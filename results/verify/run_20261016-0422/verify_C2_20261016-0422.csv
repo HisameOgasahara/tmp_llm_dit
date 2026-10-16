@@ -1,0 +1,25 @@
+check,ok,max_abs
+원본 동치 (Qwen-Image-2.1),True,
+같은 이미지 블록 안은 전부 허용,True,0.0
+미래 칸(다른 블록) 은 전부 막힘,True,0.0
+붙어 있는 조건 블록 B 는 C 를 못 봄,True,0.0
+transformer_blocks.0.attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+transformer_blocks.0.attn.attn_probs 막힌 칸 확률 = 0,True,0.0
+transformer_blocks.1.attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+transformer_blocks.1.attn.attn_probs 막힌 칸 확률 = 0,True,0.0
+scale1 prefix 행은 샘플 간 동일 (t=0),True,0.0
+scale1 타깃 행은 샘플마다 다름 (실제 t),True,0.055912815034389496
+gate1 prefix 행은 샘플 간 동일 (t=0),True,0.0
+gate1 타깃 행은 샘플마다 다름 (실제 t),True,0.0706910714507103
+scale2 prefix 행은 샘플 간 동일 (t=0),True,0.0
+scale2 타깃 행은 샘플마다 다름 (실제 t),True,0.06769732385873795
+gate2 prefix 행은 샘플 간 동일 (t=0),True,0.0
+gate2 타깃 행은 샘플마다 다름 (실제 t),True,0.07870055735111237
+타깃·t 바꿔도 prefix 출력 불변,True,0.0
+타깃 출력은 바뀜,True,2.569411039352417
+causal_condition=False 면 prefix 가 바뀜,True,0.11737245321273804
+block_causal=False 면 prefix 가 바뀜,True,0.030154138803482056
+padding 텍스트 내용은 유효 토큰에 영향 없음,True,0.0
+padding 토큰 자기 출력은 바뀜,True,1.6517491340637207
+조건 이미지 칸의 VL hidden 은 무시됨,True,0.0
+CFG 출력 유한 + cond 와 다름,True,0.0399743914604187

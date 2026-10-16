@@ -1,0 +1,27 @@
+check,ok,max_abs
+원본 동치 (Anima),True,
+text_conditioner.blocks.0.self_attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+text_conditioner.blocks.0.cross_attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+text_conditioner.blocks.1.self_attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+text_conditioner.blocks.1.cross_attn.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+transformer.transformer_blocks.0.attn1.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+transformer.transformer_blocks.0.attn2.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+transformer.transformer_blocks.1.attn1.attn_probs 행 합 = 1,True,2.384185791015625e-07
+transformer.transformer_blocks.1.attn2.attn_probs 행 합 = 1,True,1.1920928955078125e-07
+adapter block 0: padding된 Qwen 칸 확률 = 0,True,0.0
+adapter block 1: padding된 Qwen 칸 확률 = 0,True,0.0
+DiT: 텍스트 토큰 순서를 섞어도 같음,True,1.4901161193847656e-08
+adapter: Qwen 순서를 뒤집으면 바뀜 (RoPE),True,1.5667637586593628
+adapter: mask된 Qwen 토큰을 덧붙여도 같음,True,7.152557373046875e-07
+adapter: padding된 T5 id 를 바꿔도 같음,True,0.0
+adapter: padding 행 = 0,True,0.0
+DiT: mask 없는 0 행 개수가 출력을 바꿈,True,0.00036255642771720886
+DiT: bool mask 로 가리면 잘라낸 것과 같음,True,2.9802322387695312e-08
+timestep 이 바뀌면 출력이 바뀜,True,0.061163634061813354
+CFG: 빈 prompt 경로 유한,True,0.10557162761688232
+Predict2 비디오 경로 동치,True,1.430511474609375e-06
+dit.use_rope=False 이면 출력이 바뀜,True,0.00039896368980407715
+dit.use_qk_norm=False 이면 출력이 바뀜,True,0.0006803125143051147
+dit.use_adaln_lora=False 이면 출력이 바뀜,True,0.002529062330722809
+dit.use_cross_attn=False 이면 출력이 바뀜,True,0.000538945198059082
+adapter.use_rope=False 이면 출력이 바뀜,True,0.00043391063809394836

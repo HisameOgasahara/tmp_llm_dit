@@ -1,0 +1,33 @@
+check,ok,max_abs
+원본 동치 (Gemma-4-31B/26B-A4B/E4B/12B),True,
+내 구현 causal leak (prefix<24),True,0.0
+e_series == 원본,True,0.0
+dense == 원본,True,0.0
+unified == 원본,True,0.0
+causal_lm == 원본,True,0.0
+layer 0 확률 합,True,1.1920928955078125e-07
+layer 0 마스크 밖 확률 0,True,0.0
+layer 1 확률 합,True,2.384185791015625e-07
+layer 1 마스크 밖 확률 0,True,0.0
+layer 2 확률 합,True,1.1920928955078125e-07
+layer 2 마스크 밖 확률 0,True,0.0
+layer 3 확률 합,True,2.384185791015625e-07
+layer 3 마스크 밖 확률 0,True,0.0
+layer 4 확률 합,True,1.7881393432617188e-07
+layer 4 마스크 밖 확률 0,True,0.0
+layer 5 확률 합,True,1.1920928955078125e-07
+layer 5 마스크 밖 확률 0,True,0.0
+layer 6 확률 합,True,2.384185791015625e-07
+layer 6 마스크 밖 확률 0,True,0.0
+layer 4 K == layer 1 K (KV 공유),True,0.0
+layer 5 K == layer 3 K (KV 공유),True,0.0
+layer 6 K == layer 1 K (KV 공유),True,0.0
+global RoPE 앞 25% 만 회전,True,0.0
+qk_norm=False 이면 출력이 바뀜,True,5.040705680847168
+v_norm=False 이면 출력이 바뀜,True,2.686851978302002
+sandwich_norm=False 이면 출력이 바뀜,True,4.4021806716918945
+scale_embed=False 이면 출력이 바뀜,True,2.954348564147949
+use_dense_branch=False 이면 출력이 바뀜,True,4.2847161293029785
+use_moe_branch=False 이면 출력이 바뀜,True,4.222415924072266
+use_ple=False 이면 출력이 바뀜,True,4.657114028930664
+logits 가 ±30.0 안,True,0.6778544783592224

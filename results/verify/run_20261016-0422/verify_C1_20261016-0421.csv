@@ -1,0 +1,20 @@
+check,ok,max_abs
+원본 동치 (Cosmos3-Nano),True,
+생성 토큰 변경 → reasoner 불변,True,0.0
+생성 토큰 변경 → generator 변함,True,2.3256266117095947
+텍스트 4번 이후 변경 → 앞 reasoner 불변,True,0.0
+텍스트 4번 이후 변경 → 뒤 reasoner 변함,True,5.3956451416015625
+텍스트 변경 → generator 변함 (reasoner 를 봄),True,0.5950261354446411
+gen_sees_und=False → 텍스트 바꿔도 generator 불변,True,0.0
+und_sees_gen=True → 생성 토큰이 reasoner 를 바꿈,True,0.3630620837211609
+layer 0 reasoner 미래 확률 = 0,True,0.0
+layer 0 확률 행 합 = 1,True,1.1920928955078125e-07
+layer 1 reasoner 미래 확률 = 0,True,0.0
+layer 1 확률 행 합 = 1,True,1.1920928955078125e-07
+Edge 변형 원본 동치,True,0.0
+und_causal=False 유한 · 출력 변함,True,0.1251969337463379
+gen_sees_und=False 유한 · 출력 변함,True,1.023146629333496
+und_sees_gen=True 유한 · 출력 변함,True,0.16062164306640625
+share_towers=True 유한 · 출력 변함,True,3.2840147018432617
+use_timestep=False 유한 · 출력 변함,True,1.083052635192871
+mrope_interleaved=False 유한 · 출력 변함,True,0.47350406646728516
