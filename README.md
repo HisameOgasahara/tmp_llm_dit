@@ -28,6 +28,15 @@
 | A6c | Qwen3.8 플래그십 2.4T-A95B (하이브리드 + MoE) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A6c_qwen38_moe.ipynb) |
 | A7a | Qwen3.8-Flash-Next (HC, indexer, n-gram) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A7a_qwen38_flash_next.ipynb) |
 | A8 | DeepSeek-V4.1-Flash (CSA2, Engram) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A8_deepseek_v41.ipynb) |
+| A9 | StepFun Step-5-Preview (SWA+full, head 게이트, sparse indexer, MoE) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A9_step5.ipynb) |
+| A10 | Gemma 4 (K=V 전역 층, MoE, PLE, KV 공유, unified) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/A10_gemma4.ipynb) |
+| B1 | Qwen-Image (MM-DiT) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/B1_qwen_image.ipynb) |
+| B2 | Krea-2 (Single-Stream DiT) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/B2_krea2.ipynb) |
+| B3 | Anima (Cosmos-Predict2 DiT + LLM adapter) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/B3_anima.ipynb) |
+| B4 | MiniMax-H3 (비디오 + 오디오 3D DiT) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/B4_minimax_h3.ipynb) |
+| C0 | Qwen3.8-27B 비전 인코더 (ViT + M-RoPE) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/C0_qwen38_vision.ipynb) |
+| C1 | Cosmos3 (추론 + 생성 두 타워 MoT) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/C1_cosmos3.ipynb) |
+| C2 | Qwen-Image-2.1 (생성 + 편집 통합) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/C2_qwen_image21.ipynb) |
 
 ## 실행 방법
 

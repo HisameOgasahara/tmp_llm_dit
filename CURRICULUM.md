@@ -19,6 +19,8 @@
 | Qwen3.8-Flash-Next | 2026-08 | 위 + HC, sparse indexer, n-gram 임베딩, 비전 인코더 내장 | transformers `qwen4_exp` ✅ | 125B-A6B |
 | GLM-5.3 | 2026-08 | MLA + DSA (indexer 4층마다 공유) | transformers `glm_moe_dsa` ✅ | 일반 / Flash(구조 다름) |
 | MiniMax-M3 | 2026-06 | GQA + 블록 top-k sparse (MSA) | 모델 코드 없음, GitHub `MiniMax-AI/MSA` 테스트 참조 ⚠️ | 단일 |
+| Step-5-Preview (StepFun) | 2026-09 | SWA 3 : full 1 (층별 partial RoPE·theta), head별 attention 게이트, sparse indexer, MoE 352개 중 8개 + shared + router bias, MTP 3층 | HF `stepfun-ai/Step-5-Preview` `inference/model.py` (커널 → PyTorch 교체) | Preview / BF16 / NVFP4 |
+| Gemma 4 | 2026-04~06 | SWA 5 : full 1, 전역 층은 head_dim 512 + K=V, sandwich norm, logit softcap. 26B-A4B는 MoE, E2B/E4B는 층별 입력(PLE) + 뒤쪽 층 KV 공유, 12B는 unified | transformers `gemma4`, `gemma4_unified` ✅ | E2B / E4B / 12B / 26B-A4B / 31B |
 | MiMo-V2.6 | 2026-09 | SWA 7 : full 1, head별 학습형 sink (gpt-oss 방식) | HF `modeling_mimo_v2.py` ✅ | Flash / Pro |
 
 ### 생성 (DiT) · 멀티모달
@@ -44,6 +46,8 @@
 | A5 | sparse: DSA indexer(층 간 공유) / 블록 top-k | GLM-5.3 / MiniMax-M3 | `glm_moe_dsa` / GitHub `MiniMax-AI/MSA` |
 | A6 | Gated DeltaNet + Gated Attn (a: dense, c: + MoE 플래그십) / KDA + gated MLA (b) | Qwen3.6·3.8-27B, Qwen3.8-2.4T / Kimi-K3 | `qwen3_5`, `qwen3_5_moe` / HF `modeling_kimi_linear.py` |
 | A7 | Residual → HC → mHC / Attention Residuals | DeepSeek-V4, Qwen3.8-Flash-Next / Kimi-K3 | `deepseek_v4`, `qwen4_exp` / `modeling_kimi_k3.py` |
+| A9 | SWA+full + head별 게이트 + sparse indexer + MoE (StepFun) | Step-5-Preview | HF `inference/model.py` |
+| A10 | 경량 모델 설계: 전역 층 K=V·큰 head, PLE, 층 간 KV 공유, MoE | Gemma 4 | transformers `gemma4`, `gemma4_unified` |
 | A8 | MTP, Engram, CSA2 (층마다 Full/Reindex/Reuse로 KV·indexer 공유) | DeepSeek-V4.1 | HF `inference/model.py`, `engram.py` |
 
 MLA(latent 차원 압축)는 V4에서 빠졌습니다. GLM-5.3(A5), Kimi-K3(A6)에서 다룹니다.
@@ -57,7 +61,7 @@ A4와 V4의 A3·A5·A7 부품은 DeepSeek-V4 하나로 구현·검증하고, 실
 |---|---|---|---|
 | B0 | DiT (adaLN-Zero) + flow matching | DiT | diffusers `DiTTransformer2DModel` |
 | B1 | MM-DiT (dual stream) | Qwen-Image | DiffSynth `qwen_image_dit.py` |
-| B2 | Single-Stream DiT + 편집 조건 | Qwen-Image-2.1, Krea-2 | DiffSynth `qwen_image_21_dit.py`, `krea2_dit.py` |
+| B2 | Single-Stream DiT | Krea-2 | DiffSynth `krea2_dit.py`, diffusers |
 | B3 | Cosmos-Predict2 계열 | Anima | DiffSynth `anima_dit.py`, ComfyUI `anima`, diffusers `AnimaModularPipeline` |
 
 B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 아니라 추론 타워와 attention을 공유하는 MoT라서 C1에서 다룹니다.
@@ -71,7 +75,7 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
 |---|---|---|---|
 | C0 | 미니 VLM: 비전 인코더 내장 하이브리드 LM (A6a 위에 ViT + M-RoPE) | Qwen3.8-27B | transformers `qwen3_5` |
 | C1 | MoT world model / VLA (행동 출력) | Cosmos3 (비교: GR00T-N1.7) | diffusers `transformer_cosmos3.py`, GitHub `nvidia/cosmos` / `NVIDIA/Isaac-GR00T` |
-| C2 (후보) | 주행 VLM: VLM + 3D 인식 + flow matching 경로 planner | Qwen-Drive-1.0-4B | GitHub `QwenLM/Qwen-Drive-1.0` |
+| C2 | 생성+편집 통합: Qwen3-VL 인코더 조건 + Single-Stream DiT 32층 | Qwen-Image-2.1 | diffusers, DiffSynth `qwen_image_21_dit.py` |
 
 태스크: FashionMNIST 이미지 질의응답 → 이미지로 본 미로에서 행동 시퀀스 출력.
 
@@ -85,6 +89,7 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
    - `01_modadd` 100k-step 긴 학습: 셀 오류 수정 후 재실행 필요
 3. 최신 LLM 블록 구현·검증 ✅ (2026-10-16, Colab T4, `results/verify/`)
    - 원본 동치 + causal 누수 + 단계 전용 점검 전부 통과: A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA(attention 층 단위), A6a Qwen3.6, A6b Kimi-K3, A6c Qwen3.8 플래그십 2.4T, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash
+   - **진행 중:** A9 Step-5, A10 Gemma 4, B1~B4, C0~C2 구현·검증 (같은 방식)
    - **다음:** MQAR 태스크 추가 (`miniarch/tasks`) → 4번 실험
 4. 부품별 ablation 실험: A1 → A2 → DeepSeek-V4 스위치 (sliding만 → +CSA/HCA → +MoE → +mHC), Qwen3.6 선형:full 비율. 태스크 MQAR → 덧셈 → 미로
 5. B1 ~ B4, C0 ~ C2 (모델별 검증 노트북 방식 그대로)

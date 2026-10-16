@@ -49,7 +49,7 @@ def build(module_name):
 """)
     nb.setup()
     if spec["PIP"]:
-        nb.code("!pip -q install -U " + " ".join(spec["PIP"]))
+        nb.code("!pip -q install -U " + " ".join("'" + p.strip("'\"") + "'" for p in spec["PIP"]))  # 따옴표: >= 가 셸 리다이렉트가 되지 않게
     nb.code(f"""
 from miniarch import verify as V
 from miniarch.verify import stages
@@ -101,7 +101,7 @@ V.set_deterministic(0)
 ref, inputs = S.ref()
 ref = ref.to(dev).eval()
 with torch.no_grad():
-    out = ref(**{k: v.to(dev) for k, v in inputs.items()})
+    out = ref(**{k: v.to(dev) if torch.is_tensor(v) else v for k, v in inputs.items()})
 t = out[0] if isinstance(out, tuple) else getattr(out, "last_hidden_state", None)
 t = t if t is not None else out.sample
 print(f"{type(ref).__name__}  params={sum(p.numel() for p in ref.parameters()):,}  out={tuple(t.shape)}")
