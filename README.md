@@ -39,6 +39,11 @@
 | C1 | Cosmos3 (추론 + 생성 두 타워 MoT) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/C1_cosmos3.ipynb) |
 | C2 | Qwen-Image-2.1 (생성 + 편집 통합) | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/verify/C2_qwen_image21.ipynb) |
 
+### 모델별 학습 동작 검증 (`notebooks/train_verify/`)
+
+순전파 검증과 분리했습니다. 모델마다 원본과 기울기 비교, 원본과 나란히 학습한 궤적 비교, 배치 하나 외우기, float64 수치 미분, 라우터 bias 업데이트를 봅니다.
+**한 번에 전부 돌리기:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/HisameOgasahara/tmp_llm_dit/blob/main/notebooks/train_verify/00_run_all.ipynb) `train_verify/00_run_all` (모델 노트북 이름은 `verify/`와 같음)
+
 ## 실행 방법
 
 1. 배지를 눌러 Colab에서 엽니다.
@@ -67,7 +72,8 @@ miniarch/
   train.py     공용 학습 유틸 (seed, EMA)
   trainer.py   공용 학습 루프 (TensorBoard 기록, MI 지표 자동 수집, 라우터 bias 업데이트, 체크포인트 재개)
 notebooks/     Colab 노트북 (직접 편집 금지, tools/ 에서 생성)
-  verify/      모델별 검증 노트북 (tools/build_verify.py 가 stages/ 에서 생성)
+  verify/      모델별 순전파 검증 노트북 (tools/build_verify.py 가 stages/ 에서 생성)
+  train_verify/ 모델별 학습 동작 검증 노트북 (같은 생성기)
 tools/         노트북 생성 스크립트
 results/       실험 결과
 CURRICULUM.md  단계별 로드맵

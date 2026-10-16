@@ -97,7 +97,7 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
    - LLM: A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA(attention 층 단위), A6a Qwen3.6, A6b Kimi-K3, A6c Qwen3.8 플래그십 2.4T, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash, A9 Step-5-Preview, A10 Gemma 4
    - DiT: B1 Qwen-Image, B2 Krea-2, B3 Anima, B4 MiniMax-H3 / 멀티모달: C0 Qwen3.8-27B 비전, C1 Cosmos3, C2 Qwen-Image-2.1
    - ⚠️ 여기까지는 forward 만 검증했습니다. 학습 쪽 검증이 빠져 있었습니다.
-   - **3-2. 모델 학습 동작 검증** (구현 완료, Colab 실행 대기 → `notebooks/verify/00_run_all`): 모델별 노트북에
+   - **3-2. 모델 학습 동작 검증** (구현 완료, Colab 실행 대기 → `notebooks/train_verify/00_run_all`, 순전파 검증과 분리): 모델별 노트북에
      ② 기울기 == 원본, ③ 학습 궤적 == 원본(SGD 30 step), 배치 하나 외우기, ④ float64 수치 미분, 라우터 bias 업데이트
      (원본이 추론 전용인 A5b·A8·A9 는 ②③ 대신 ④ 수치 미분으로 확인)
    - **3-3. 학습 코드 검증** (구현 완료, Colab 실행 대기 → `notebooks/03_train_check`): ⑤ 태스크·마스킹·정답 누수·학습/평가 분리,

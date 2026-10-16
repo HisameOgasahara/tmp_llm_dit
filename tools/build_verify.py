@@ -28,46 +28,8 @@ def read_spec(path):
     return spec
 
 
-def build(module_name):
-    spec = read_spec(os.path.join(STAGES_DIR, module_name + ".py"))
-    stage, path = spec["STAGE"], f"notebooks/verify/{spec['STAGE']}_{spec['SLUG']}.ipynb"
-    nb = NB()
-    steps = ["환경 준비"] + (["원본 구조 (HF 헤더)"] if spec["HEADER"] else []) + \
-            ["원본 모델 동작 확인", "내 구현 == 원본 (층별 출력 비교)"] + \
-            (["causal 누수"] if spec["CAUSAL"] else []) + ["학습 동작 확인"] + \
-            (["단계 전용 자체 점검"] if spec["SELF_CHECKS"] else []) + \
-            ["결과 저장"]
-    nb.md(f"""
-# {stage} · {spec['TITLE']} 검증
-
-{nb.badge(path)}
-
-{spec['INTRO'].strip()}
-
-순서: {' → '.join(f'{i}. {s}' for i, s in enumerate(steps))}
-
-**런타임 → 런타임 유형 변경 → T4 GPU** 선택 후 위에서부터 실행하세요. 다른 모델 노트북과 독립적으로 돌아갑니다.
-""")
-    nb.setup()
-    if spec["PIP"]:
-        nb.code("if not os.environ.get('MINIARCH_SKIP_PIP'):   # 전체 실행 노트북이 한 번에 설치\n"
-                "    !pip -q install -U " + " ".join("'" + p.strip("'\"") + "'" for p in spec["PIP"]))  # 따옴표: >= 가 셸 리다이렉트가 되지 않게
-    nb.code(f"""
-from miniarch import verify as V
-from miniarch.verify import stages
-S = stages.get("{stage}")
-dev = "cuda" if torch.cuda.is_available() else "cpu"
-try:   # gated 모델 헤더/원격 코드용. Colab 왼쪽 🔑(보안 비밀)에 HF_TOKEN 등록.
-    from google.colab import userdata
-    os.environ["HF_TOKEN"] = userdata.get("HF_TOKEN")
-except Exception:
-    pass
-
-CHECKS = []   # (이름, 통과, 오차) → 마지막에 저장
-def report(name, ok, err=float("nan")):
-    CHECKS.append({{"check": name, "ok": bool(ok), "max_abs": float(err)}})
-    print(f"{{'✅' if ok else '❌'}} {{name:<44}} max_abs={{err:.2e}}")
-""")
+def verify_cells(nb, spec):
+    """순전파 검증: 원본 구조, 원본 동작, 원본 동치, causal 누수, 단계 전용 점검."""
 
     if spec["HEADER"]:
         nb.md("""
@@ -133,6 +95,15 @@ mine = importlib.import_module(S.CASE.mine_module).verify_pair(S.ref()[0])["mine
 r = V.causal_leak_test(lambda x: mine(x).last_hidden_state, vocab_size=V.cases.VOCAB, seq_len=48, device=dev, atol=1e-4)
 report("내 구현 " + r.name, r.ok, r.max_abs)
 """)
+    if spec["SELF_CHECKS"]:
+        nb.md("## 단계 전용 자체 점검")
+        for m, c in spec["SELF_CHECKS"]:
+            nb.md(m)
+            nb.code(c)
+
+
+def train_cells(nb):
+    """학습 동작 검증: 기울기·학습 궤적 == 원본, 배치 외우기, float64 수치 미분, 라우터 bias."""
 
     nb.md("""
 ## 학습 동작 확인
@@ -212,11 +183,64 @@ except Exception:
     traceback.print_exc(limit=4); report("라우터 bias 업데이트", False)
 """)
 
-    if spec["SELF_CHECKS"]:
-        nb.md("## 단계 전용 자체 점검")
-        for m, c in spec["SELF_CHECKS"]:
-            nb.md(m)
-            nb.code(c)
+
+
+
+
+KINDS = {   # kind: (노트북 폴더, 결과 csv 접두어, 제목 꼬리)
+    "verify": ("verify", "verify", "순전파 검증"),
+    "train": ("train_verify", "train", "학습 동작 검증"),
+}
+
+
+def build(module_name, kind="verify"):
+    spec = read_spec(os.path.join(STAGES_DIR, module_name + ".py"))
+    folder, prefix, tail = KINDS[kind]
+    stage, path = spec["STAGE"], f"notebooks/{folder}/{spec['STAGE']}_{spec['SLUG']}.ipynb"
+    nb = NB()
+    if kind == "verify":
+        steps = ["환경 준비"] + (["원본 구조 (HF 헤더)"] if spec["HEADER"] else []) + \
+                ["원본 모델 동작 확인", "내 구현 == 원본 (층별 출력 비교)"] + \
+                (["causal 누수"] if spec["CAUSAL"] else []) + \
+                (["단계 전용 자체 점검"] if spec["SELF_CHECKS"] else []) + ["결과 저장"]
+    else:
+        steps = ["환경 준비", "기울기 == 원본", "학습 궤적 == 원본", "배치 하나 외우기", "float64 수치 미분",
+                 "라우터 bias 업데이트", "결과 저장"]
+    nb.md(f"""
+# {stage} · {spec['TITLE']} {tail}
+
+{nb.badge(path)}
+
+{spec['INTRO'].strip()}
+
+순서: {' → '.join(f'{i}. {s}' for i, s in enumerate(steps))}
+
+**런타임 → 런타임 유형 변경 → T4 GPU** 선택 후 위에서부터 실행하세요. 다른 모델 노트북과 독립적으로 돌아갑니다.
+""")
+    nb.setup()
+    if spec["PIP"]:
+        nb.code("if not os.environ.get('MINIARCH_SKIP_PIP'):   # 전체 실행 노트북이 한 번에 설치\n"
+                "    !pip -q install -U " + " ".join("'" + p.strip("'\"") + "'" for p in spec["PIP"]))  # 따옴표: >= 가 셸 리다이렉트가 되지 않게
+    nb.code(f"""
+from miniarch import verify as V
+from miniarch.verify import stages
+S = stages.get("{stage}")
+dev = "cuda" if torch.cuda.is_available() else "cpu"
+try:   # gated 모델 헤더/원격 코드용. Colab 왼쪽 🔑(보안 비밀)에 HF_TOKEN 등록.
+    from google.colab import userdata
+    os.environ["HF_TOKEN"] = userdata.get("HF_TOKEN")
+except Exception:
+    pass
+
+CHECKS = []   # (이름, 통과, 오차) → 마지막에 저장
+def report(name, ok, err=float("nan")):
+    CHECKS.append({{"check": name, "ok": bool(ok), "max_abs": float(err)}})
+    print(f"{{'✅' if ok else '❌'}} {{name:<44}} max_abs={{err:.2e}}")
+""")
+    if kind == "train":
+        train_cells(nb)
+    else:
+        verify_cells(nb, spec)
 
     nb.md("""
 ## 결과 저장
@@ -228,7 +252,7 @@ except Exception:
 import datetime, pandas as pd
 os.makedirs("results", exist_ok=True)
 df = pd.DataFrame(CHECKS)
-p = f"results/verify_{stage}_{{datetime.datetime.now():%Y%m%d-%H%M}}.csv"
+p = f"results/{prefix}_{stage}_{{datetime.datetime.now():%Y%m%d-%H%M}}.csv"
 df.to_csv(p, index=False)
 print(df.to_string(index=False)); print("saved:", p)
 print("전체:", "✅ 모두 통과" if df.ok.all() else "❌ 실패 있음")
@@ -237,18 +261,19 @@ print("전체:", "✅ 모두 통과" if df.ok.all() else "❌ 실패 있음")
     return path, spec
 
 
-def build_run_all(specs):
+def build_run_all(specs, kind="verify"):
     """모든 모델 노트북을 각각 별도 프로세스로 실행하고 결과를 한 표로 모으는 노트북."""
-    path = "notebooks/verify/00_run_all.ipynb"
+    folder, prefix, tail = KINDS[kind]
+    path = f"notebooks/{folder}/00_run_all.ipynb"
     stages = [s["STAGE"] for s in specs]
     pips = sorted({p.strip("'\"") for s in specs for p in s["PIP"]})
     nb = NB()
     nb.md(f"""
-# 검증 전체 실행
+# {tail} 전체 실행
 
 {nb.badge(path)}
 
-`notebooks/verify/`의 모델별 검증 노트북을 **한 번에** 돌립니다.
+`notebooks/{folder}/`의 모델별 노트북을 **한 번에** 돌립니다.
 
 - 노트북마다 **새 프로세스**(`jupyter nbconvert --execute`)로 실행합니다. 원본 코드 패치나 원격 코드 import 같은 전역 상태가 다음 모델로 새지 않고, 끝나면 GPU 메모리도 비워집니다.
 - 패키지는 여기서 한 번만 설치하고, 각 노트북의 설치 셀은 건너뜁니다.
@@ -265,9 +290,10 @@ T4 기준 모델당 2~5분 정도입니다. 일부만 돌리려면 아래 `SELEC
 """)
     nb.code(f"""
 import glob, subprocess, time, pandas as pd
+PREFIX = "{prefix}"   # 결과 csv 접두어
 SELECT = None   # 예: ["B1", "B2", "C2"]  (None = 전부: {", ".join(stages)})
 
-books = sorted(p for p in glob.glob("notebooks/verify/*.ipynb") if not os.path.basename(p).startswith("00_"))
+books = sorted(p for p in glob.glob("notebooks/{folder}/*.ipynb") if not os.path.basename(p).startswith("00_"))
 if SELECT:
     books = [p for p in books if os.path.basename(p).split("_")[0] in SELECT]
 os.makedirs("results/executed", exist_ok=True)
@@ -299,7 +325,7 @@ csv가 없으면 노트북이 저장 셀까지 못 간 것이니 `results/execut
 rows, fails = [], []
 for p in books:
     stage = os.path.basename(p).split("_")[0]
-    csvs = sorted(glob.glob(f"results/verify_{stage}_*.csv"))
+    csvs = sorted(glob.glob(f"results/{PREFIX}_{stage}_*.csv"))
     if not csvs:
         rows.append({"stage": stage, "통과/전체": "-", "결과": "💥 csv 없음"}); continue
     df = pd.read_csv(csvs[-1])
@@ -312,8 +338,8 @@ print("\\n실패한 점검:" if fails else "\\n모든 점검 통과", *fails, se
     nb.code("""
 import datetime, shutil
 stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M")
-summary.to_csv(f"results/verify_summary_{stamp}.csv", index=False)
-zip_path = shutil.make_archive(f"/content/verify_results_{stamp}", "zip", "results")
+summary.to_csv(f"results/{PREFIX}_summary_{stamp}.csv", index=False)
+zip_path = shutil.make_archive(f"/content/{PREFIX}_results_{stamp}", "zip", "results")
 print("zip:", zip_path)
 try:
     from google.colab import files
@@ -325,8 +351,9 @@ except Exception as e:
 
 
 if __name__ == "__main__":
-    os.makedirs(os.path.join(ROOT, "notebooks", "verify"), exist_ok=True)
     names = sys.argv[1:] or sorted(f[:-3] for f in os.listdir(STAGES_DIR) if f.endswith(".py") and not f.startswith("_"))
-    specs = [build(n)[1] for n in names]
-    if not sys.argv[1:]:
-        build_run_all(specs)
+    for kind, (folder, _, _) in KINDS.items():
+        os.makedirs(os.path.join(ROOT, "notebooks", folder), exist_ok=True)
+        specs = [build(n, kind)[1] for n in names]
+        if not sys.argv[1:]:
+            build_run_all(specs, kind)
