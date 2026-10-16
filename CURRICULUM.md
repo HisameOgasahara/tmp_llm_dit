@@ -97,7 +97,7 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
    - LLM: A2 MiMo-V2.6, A4 DeepSeek-V4, A5a GLM-5.3, A5b MiniMax-M3 MSA(attention 층 단위), A6a Qwen3.6, A6b Kimi-K3, A6c Qwen3.8 플래그십 2.4T, A7a Qwen3.8-Flash-Next, A8 DeepSeek-V4.1-Flash, A9 Step-5-Preview, A10 Gemma 4
    - DiT: B1 Qwen-Image, B2 Krea-2, B3 Anima, B4 MiniMax-H3 / 멀티모달: C0 Qwen3.8-27B 비전, C1 Cosmos3, C2 Qwen-Image-2.1
    - ⚠️ 여기까지는 forward 만 검증했습니다. 학습 쪽 검증이 빠져 있었습니다.
-   - **3-2. 모델 학습 동작 검증** (구현 완료, Colab 실행 대기 → `notebooks/train_verify/00_run_all`, 순전파 검증과 분리): 모델별 노트북에
+   - **3-2. 모델 학습 동작 검증 ✅** (2026-10-16, `notebooks/train_verify/00_run_all`, 순전파 검증과 분리, 18개 모델 전부 통과): 모델별 노트북에
      ② 기울기 == 원본, ③ 학습 궤적 == 원본(SGD 30 step), 배치 하나 외우기, ④ float64 수치 미분, 라우터 bias 업데이트
      (원본이 추론 전용인 모델은 ②③ 대신 ④ 수치 미분으로 확인)
      1차 실행(2026-10-16, `results/train_verify/run_20261016-0620/`): 6/18 완전 통과. 돌아간 기울기 비교는 전부 원본과 일치(모델 버그 없음).
@@ -106,7 +106,8 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
      내부 fp32 고정·의도된 stop-gradient 때문에 float64 수치 미분이 성립 안 함(여러 모델), 도달 불가능한 난수 목표(A5b·B4·C1)
      2차 실행(`run_20261016-0656/`): 16/18 통과. A6b 원본 MoE 가 eval 모드에서 no_grad 추론 경로라 원본 기울기가 중간에서 끊김 → 수치 미분으로 대체,
      A6c 는 기울기 일치(4.9e-5)하나 MoE 라우팅이 갈라져 궤적이 벌어짐.
-     3차(`run_20261016-0709/`, A6b·A6c 만): A6b ✅ (수치 미분 1e-2 이내). A6c 는 10 step 에서도 가중치 6% 차이 → MoE 궤적 비교는 3 step 으로 축소, A6c 재실행 대기
+     3차(`run_20261016-0709/`, A6b·A6c 만): A6b ✅ (수치 미분 1e-2 이내). A6c 는 10 step 에서도 가중치 6% 차이 → MoE 궤적 비교는 3 step 으로 축소.
+     4차(`run_20261016-0724/`, A6c): ✅ 5/5 (3 step 가중치 차 1e-6). **18개 모델 학습 동작 검증 완료.**
    - **3-3. 학습 코드 검증 ✅** (2026-10-16, `notebooks/03_train_check`, `results/train_check/`): 88개 전부 통과.
      MQAR 재현: 처음엔 모든 키를 한 번씩 묻는 설계라 소거법 지름길(정확도 0.34)에 갇힘 → 질문 중복 허용으로 수정.
      Llama(2층, d=128)가 16,500 step 까지 0.16 에서 정체하다 17,000~19,500 step 에 0.28 → 0.91 로 급상승 (induction 회로 형성 시점).
@@ -115,6 +116,6 @@ B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 �
      ⑥ 알려진 결과 재현(Llama 가 MQAR 풂)
    - 공용 학습 루프 `miniarch/trainer.py`: 태그 이름 통일, run 폴더 = runs/<태스크>/<모델>/<변형>/seed<k>, MI 지표 자동 수집
    - 아직 없는 학습 전용 부품: MoE aux loss(Qwen·Gemma 방식), MTP 손실 → 해당 실험에 들어갈 때 추가
-   - **다음:** 위 두 노트북 통과 → 4번 실험 (MQAR 태스크는 `miniarch/tasks/mqar.py` 로 추가됨)
+   - **검증 단계 완료** (순전파 · 학습 동작 · 학습 코드). **다음:** 4번 실험
 4. 부품별 ablation 실험: A1 → A2 → DeepSeek-V4 스위치 (sliding만 → +CSA/HCA → +MoE → +mHC), Qwen3.6 선형:full 비율. 태스크 MQAR → 덧셈 → 미로
 5. DiT·멀티모달 실험: 편집, Moving-MNIST, 이미지 질의응답, 미로 행동
