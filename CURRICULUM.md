@@ -46,9 +46,9 @@
 | A5 | sparse: DSA indexer(층 간 공유) / 블록 top-k | GLM-5.3 / MiniMax-M3 | `glm_moe_dsa` / GitHub `MiniMax-AI/MSA` |
 | A6 | Gated DeltaNet + Gated Attn (a: dense, c: + MoE 플래그십) / KDA + gated MLA (b) | Qwen3.6·3.8-27B, Qwen3.8-2.4T / Kimi-K3 | `qwen3_5`, `qwen3_5_moe` / HF `modeling_kimi_linear.py` |
 | A7 | Residual → HC → mHC / Attention Residuals | DeepSeek-V4, Qwen3.8-Flash-Next / Kimi-K3 | `deepseek_v4`, `qwen4_exp` / `modeling_kimi_k3.py` |
+| A8 | MTP, Engram, CSA2 (층마다 Full/Reindex/Reuse로 KV·indexer 공유) | DeepSeek-V4.1 | HF `inference/model.py`, `engram.py` |
 | A9 | SWA+full + head별 게이트 + sparse indexer + MoE (StepFun) | Step-5-Preview | HF `inference/model.py` |
 | A10 | 경량 모델 설계: 전역 층 K=V·큰 head, PLE, 층 간 KV 공유, MoE | Gemma 4 | transformers `gemma4`, `gemma4_unified` |
-| A8 | MTP, Engram, CSA2 (층마다 Full/Reindex/Reuse로 KV·indexer 공유) | DeepSeek-V4.1 | HF `inference/model.py`, `engram.py` |
 
 MLA(latent 차원 압축)는 V4에서 빠졌습니다. GLM-5.3(A5), Kimi-K3(A6)에서 다룹니다.
 A4와 V4의 A3·A5·A7 부품은 DeepSeek-V4 하나로 구현·검증하고, 실험은 스위치로 부품을 하나씩 켭니다. A2 MiMo는 "sliding + sink만 켠 상태"의 기준점입니다.
@@ -63,9 +63,9 @@ A4와 V4의 A3·A5·A7 부품은 DeepSeek-V4 하나로 구현·검증하고, 실
 | B1 | MM-DiT (dual stream) | Qwen-Image | DiffSynth `qwen_image_dit.py` |
 | B2 | Single-Stream DiT | Krea-2 | DiffSynth `krea2_dit.py`, diffusers |
 | B3 | Cosmos-Predict2 계열 | Anima | DiffSynth `anima_dit.py`, ComfyUI `anima`, diffusers `AnimaModularPipeline` |
+| B4 | 3D 비디오 + 오디오 | MiniMax-H3 | DiffSynth `minimax_h3_dit.py` |
 
 B3는 Anima를 유지합니다. 최신 Cosmos3의 생성 쪽은 독립 DiT가 아니라 추론 타워와 attention을 공유하는 MoT라서 C1에서 다룹니다.
-| B4 | 3D 비디오 + 오디오 | MiniMax-H3 | DiffSynth `minimax_h3_dit.py` |
 
 태스크: FashionMNIST 조건부 생성 → 편집(가린 부분 채우기, 클래스 바꾸기) → Moving-MNIST.
 
