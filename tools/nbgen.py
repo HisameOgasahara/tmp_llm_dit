@@ -29,7 +29,6 @@ class NB:
         self.md("## 0. 환경 준비")
         self.code(f"""
 import os
-import re
 REPO_DIR = "/content/tmp_llm_dit"
 if not os.path.exists(REPO_DIR):
     !git clone -q https://github.com/{REPO}.git {{REPO_DIR}}
