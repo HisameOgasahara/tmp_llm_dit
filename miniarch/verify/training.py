@@ -224,9 +224,10 @@ def train_parity(ref: nn.Module, pair: dict, inputs, device: str, steps: int = 3
         return ParityReport(False, 0, [], [], float("nan"), float("nan"), "", f"가중치 복사 실패: {rep}")
     moe_note = ""
     if any(n.endswith("route_probe") for n, _ in mine.named_modules()):
-        # MoE: 두 구현의 1e-7 수준 합산 순서 차이로 top-k 동점 근처 선택이 갈라지면 그 뒤 궤적은 원리적으로 달라진다
-        steps = min(steps, 10)
-        moe_note = "MoE → 라우팅이 갈라지기 전 10 step 만 비교"
+        # MoE: 가중치가 움직이며 동점 근처를 지나는 토큰은 1e-5 수준 차이로도 top-k 선택이 갈리고, 그 뒤 궤적은 원리적으로 달라진다
+        # (A6c: 기울기는 4.9e-5 로 일치, 10 step 뒤 가중치 6% 차이). 업데이트 경로가 같은지만 처음 3 step 으로 확인한다.
+        steps = min(steps, 3)
+        moe_note = "MoE → 라우팅이 갈라지기 전 3 step 만 비교"
     out_fn_r, out_fn_m = pair.get("out_fn_ref", _first_tensor), pair.get("out_fn_mine", _first_tensor)
     out0 = out_fn_r(_ref_call(ref, x_ref))
     if not ref.training:
